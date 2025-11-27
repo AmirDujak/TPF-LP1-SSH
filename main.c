@@ -16,10 +16,11 @@ bool GuiCircleButton(Vector2 center, float radius, char fichaActual, const char 
     if (fichaActual == 'X') {
         color = RED;
     } else if (fichaActual == 'O') {
-        color = hovered ? YELLOW : GOLD;
+        color = GOLD;
     } else{
         color = hovered ? LIGHTGRAY : GRAY;
     }
+
 
     DrawCircleV(center, radius, color);
     DrawText(text, center.x - MeasureText(text, 20)/2, center.y - 10, 20, BLACK);
@@ -28,7 +29,7 @@ bool GuiCircleButton(Vector2 center, float radius, char fichaActual, const char 
     return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
-bool GuiRectButton(Rectangle rect, const char *text) {
+bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered) {
     Vector2 mouse = GetMousePosition();
     bool hovered = CheckCollisionPointRec(mouse, rect);
 
@@ -38,6 +39,7 @@ bool GuiRectButton(Rectangle rect, const char *text) {
 
     // Dibujar rectángulo
     DrawRectangleRec(rect, color);
+
 
     // Dibujar borde opcional (más lindo visualmente)
     //DrawRectangleLinesEx(rect, 2, DARKGRAY);
@@ -49,6 +51,13 @@ bool GuiRectButton(Rectangle rect, const char *text) {
     int textY = rect.y + (rect.height - fontSize) / 2;
 
     DrawText(text, textX, textY, fontSize, colorTexto);
+
+    //? Sonido de hover
+    if (hovered && !(*wasHovered)) {
+        PlaySound(fx);
+    }
+
+    *wasHovered = hovered;
 
     // Detectar click
     return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
@@ -79,6 +88,15 @@ typedef enum {
     SCREEN_PARTIDA
 } GameScreen;
 
+bool hoverJugar = false;
+bool hoverEstadisticas = false;
+bool hoverCreditos = false;;
+bool hoverSalir = false;;
+bool hoverVolver = false;;
+bool hoverNuevaPartida = false;
+bool hoverPartidasGuardadas = false;
+bool hoverEmpezarPartida = false;
+
 int main(void){         
     int screenWidth = 800;
     int screenHeight = 450;
@@ -108,8 +126,16 @@ int main(void){
 
     InitAudioDevice(); //? Inicia el dispositivo de audio
     Music music = LoadMusicStream("assets/music/PrepareForEscape.mp3"); //? Carga la musica
-    SetMusicVolume(music, 1.0f);
     SetMasterVolume(1.0f);
+    SetMusicVolume(music, 1.0f);
+    PlayMusicStream(music);
+
+    //? Iniciar los efectos de sonido
+    Sound sonidoHover = LoadSound("assets/sounds/hoverSound.ogg");
+    Sound sonidoClick = LoadSound("assets/sounds/clickSound.ogg");
+    Sound sonidoDrag = LoadSound("assets/sounds/dragSound.ogg"); //? Todavia no se implemento
+    Sound sonidoDrop = LoadSound("assets/sounds/dropSound.ogg");
+    
 
 
     GameScreen currentScreen = SCREEN_MENU; //! Cambiar a SCREEN_MENU al terminar
@@ -155,60 +181,74 @@ int main(void){
         BeginDrawing();
         ClearBackground(BLACK);
         DrawTextureEx( fondo, (Vector2){offsetX, offsetY}, 0.0f, scale, WHITE); //? Se dibuja el fondo
+        if (!IsMusicStreamPlaying(music)) {
+            printf("La musica NO se esta reproduciendo!!\n");
+        }
         switch(currentScreen) {
             case SCREEN_MENU: //? Menu principal
             
-            if (GuiRectButton((Rectangle){325, 200, 150, 40}, "Jugar")) {
+            if (GuiRectButton((Rectangle){325, 200, 150, 40}, "Jugar", sonidoHover, &hoverJugar)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_JUGAR;
             }
-            if (GuiRectButton((Rectangle){325, 250, 150, 40}, "Estadísticas")) {
+            if (GuiRectButton((Rectangle){325, 250, 150, 40}, "Estadísticas", sonidoHover, &hoverEstadisticas)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_ESTADISTICAS;
             }
-            if (GuiRectButton((Rectangle){325, 300, 150, 40}, "Créditos")) {
+            if (GuiRectButton((Rectangle){325, 300, 150, 40}, "Créditos", sonidoHover, &hoverCreditos)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_CREDITOS;
             }
-            if (GuiRectButton((Rectangle){325, 350, 150, 40}, "Salir")) {
+            if (GuiRectButton((Rectangle){325, 350, 150, 40}, "Salir", sonidoHover, &hoverSalir)) {
+                PlaySound(sonidoClick);
                 return 0;
             }
             break;
 
 
             case SCREEN_CREDITOS: //? Créditos
-            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver")) {
+            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_MENU;
             }
             DrawText("Autor: Amir Dujak\n\nProfesores:\n\nVicente Gonzáles\nCarlos Troya\nMartín Monzon\nElias Álvarez", 310, 100, 20, DARKGRAY);
             break;
 
             case SCREEN_ESTADISTICAS: //? Estadísticas
-            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver")) {
+            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_MENU;
             }
             break;
 
 
             case SCREEN_JUGAR: //? Continuar partida, Partida nueva o partidas guardadas
-            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver")) {
+            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_MENU;
             }
-            if (GuiRectButton((Rectangle){300, 240, 200, 40}, "Nueva partida")) {
+            if (GuiRectButton((Rectangle){300, 240, 200, 40}, "Nueva partida", sonidoHover, &hoverNuevaPartida)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_PARTIDA_NUEVA;
             }
-            if (GuiRectButton((Rectangle){300, 300, 200, 40}, "Partidas Guardadas")) {
+            if (GuiRectButton((Rectangle){300, 300, 200, 40}, "Partidas Guardadas", sonidoHover, &hoverPartidasGuardadas)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_PARTIDAS_GUARDADAS;
             }
             break;
 
 
             case SCREEN_PARTIDAS_GUARDADAS: //? Partidas guardadas
-            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver")) {
+            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_JUGAR;
             }
             break;
 
 
             case SCREEN_PARTIDA_NUEVA: //? Crear nueva partida
-            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver")) {
+            if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_JUGAR;
             }
             DrawText("Jugador 1", 88, 104, 20, AMARILLOTARKOV);
@@ -224,7 +264,8 @@ int main(void){
             GuiToggleGroup((Rectangle){302, 200, 64, 38}, "PvP;PvE;EvE", &modoDeJuego); //? PvP sería 0, PvE sería 1, EvE sería 2;
             DrawText("Elige quien empieza la partida", 255, 260, 20, AMARILLOTARKOV);
             GuiToggleGroup((Rectangle){327, 312, 72, 38}, "Jugador 1;Jugador 2", &turno); //? Jugador 1 seria 0, jugador 2 sería 1
-            if(GuiRectButton((Rectangle){313, 373, 176, 48}, "Empezar partida")) {
+            if(GuiRectButton((Rectangle){313, 373, 176, 48}, "Empezar partida", sonidoHover, &hoverEmpezarPartida)) {
+                PlaySound(sonidoClick);
                 currentScreen = SCREEN_PARTIDA;
             }
             break;
@@ -240,6 +281,7 @@ int main(void){
             drawTablero(RadioCirculo, tablero, &columnaAColocar);
             if (columnaAColocar >= 0) {
                 elegirUbicacionDeFicha(&turno, tablero, &estadoPartida, jugador1, jugador2, modoDeJuego, &columnaAColocar);
+                PlaySound(sonidoDrop);
             }
             verificarVictoria(tablero, &estadoPartida, &lleno1, &lleno2, &columnasLlenas); //estadoPartida = 1 gano el 1
             break;
@@ -250,6 +292,8 @@ int main(void){
 
     UnloadMusicStream(music);
     CloseAudioDevice();
+    UnloadSound(sonidoHover);
+    UnloadSound(sonidoClick);
     UnloadTexture(fondo);
     CloseWindow();
     return 0;
