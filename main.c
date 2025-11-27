@@ -104,8 +104,18 @@ int main(void){
     
 
     InitWindow(screenWidth, screenHeight, "Escape from N-Connect");
+    SetTargetFPS(60);
+
+    InitAudioDevice(); //? Inicia el dispositivo de audio
+    Music music = LoadMusicStream("assets/music/PrepareForEscape.mp3"); //? Carga la musica
+    SetMusicVolume(music, 1.0f);
+    SetMasterVolume(1.0f);
+
+
     GameScreen currentScreen = SCREEN_MENU; //! Cambiar a SCREEN_MENU al terminar
     int PosXVolver, PosYVolver, TamXVolver, TamYVolver;
+
+    
 
     
     Texture2D fondo = LoadTexture("assets/escape_n_connect.png");
@@ -140,6 +150,8 @@ int main(void){
         // Centrar la imagen (para evitar que aparezca desplazada)
         float offsetX = (screenWidth - newWidth) / 2.0f;
         float offsetY = (screenHeight - newHeight) / 2.0f;
+
+        UpdateMusicStream(music);
         BeginDrawing();
         ClearBackground(BLACK);
         DrawTextureEx( fondo, (Vector2){offsetX, offsetY}, 0.0f, scale, WHITE); //? Se dibuja el fondo
@@ -236,6 +248,8 @@ int main(void){
         EndDrawing();
     }
 
+    UnloadMusicStream(music);
+    CloseAudioDevice();
     UnloadTexture(fondo);
     CloseWindow();
     return 0;
