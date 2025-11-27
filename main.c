@@ -8,6 +8,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
+
 bool GuiCircleButton(Vector2 center, float radius, char fichaActual, const char *text) {
     Vector2 mouse = GetMousePosition();
     bool hovered = CheckCollisionPointCircle(mouse, center, radius);
@@ -34,7 +35,7 @@ bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered)
     bool hovered = CheckCollisionPointRec(mouse, rect);
 
     // Elegir color según fichaActual
-    Color color = hovered ? AMARILLOTARKOV : SINBORDE;
+    Color color = hovered ? BORDETARKOV : SINBORDE;
     Color colorTexto = hovered ? BLACK : AMARILLOTARKOV;
 
     // Dibujar rectángulo
@@ -135,10 +136,13 @@ int main(void){
     Sound sonidoClick = LoadSound("assets/sounds/clickSound.ogg");
     Sound sonidoDrag = LoadSound("assets/sounds/dragSound.ogg"); //? Todavia no se implemento
     Sound sonidoDrop = LoadSound("assets/sounds/dropSound.ogg");
+
+    //? Cargar la fuente
+    Font fuente = LoadFont("assets/font/AGENCYB.ttf");
     
 
 
-    GameScreen currentScreen = SCREEN_MENU; //! Cambiar a SCREEN_MENU al terminar
+    GameScreen currentScreen = SCREEN_PARTIDA; //! Cambiar a SCREEN_MENU al terminar
     int PosXVolver, PosYVolver, TamXVolver, TamYVolver;
 
     
@@ -146,7 +150,7 @@ int main(void){
     
     Texture2D fondo = LoadTexture("assets/escape_n_connect.png");
 
-    PosXVolver = 20;
+    PosXVolver = 680;
     PosYVolver = 20;
     TamXVolver = 100;
     TamYVolver = 40;
@@ -181,9 +185,7 @@ int main(void){
         BeginDrawing();
         ClearBackground(BLACK);
         DrawTextureEx( fondo, (Vector2){offsetX, offsetY}, 0.0f, scale, WHITE); //? Se dibuja el fondo
-        if (!IsMusicStreamPlaying(music)) {
-            printf("La musica NO se esta reproduciendo!!\n");
-        }
+
         switch(currentScreen) {
             case SCREEN_MENU: //? Menu principal
             

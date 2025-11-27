@@ -3,8 +3,9 @@
 #define ROWS 6
 #define COLS 7
 #define MAX_SIZE 100
-#define AMARILLOTARKOV (Color) {237, 236, 190, 255}
+#define AMARILLOTARKOV (Color) {231, 229, 212, 255}
 #define SINBORDE (Color) {255, 255, 255, 0}
+#define BORDETARKOV (Color) {198, 192, 164, 255}
 
 // jugador1 jugador2 modoDeJuego turno tablero estadoPartida
 void limpiarBuffer(void);
