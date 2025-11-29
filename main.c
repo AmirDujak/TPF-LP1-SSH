@@ -9,7 +9,7 @@
 #include "raygui.h"
 
 
-bool GuiCircleButton(Vector2 center, float radius, char fichaActual, const char *text) {
+bool GuiCircleButton(Vector2 center, float radius, char fichaActual) {
     Vector2 mouse = GetMousePosition();
     bool hovered = CheckCollisionPointCircle(mouse, center, radius);
 
@@ -24,7 +24,6 @@ bool GuiCircleButton(Vector2 center, float radius, char fichaActual, const char 
 
 
     DrawCircleV(center, radius, color);
-    DrawText(text, center.x - MeasureText(text, 20)/2, center.y - 10, 20, BLACK);
 
     // Detectar click
     return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
@@ -64,17 +63,40 @@ bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered)
     return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
+void drawCuadroJugador(char jugador[MAX_SIZE], Texture2D fotoJugador, Rectangle rect, int x) { //? El int x es para controlar la transparencia del cuadro
+    Color color = (Color) {0, 0, 0, 252};
+    
+
+    Rectangle r1 = {rect.x, rect.y+147, rect.width, rect.height-147};
+
+    Color fondo = {255, 255, 255, x};
+    Color amarilloTarkov = {231, 229, 212, x}; //? Se modifica para agregarle transparencia al nombre
+
+    DrawTexture(fotoJugador, rect.x, rect.y, fondo);
+    int fontSize = 20;
+    int textWidth = MeasureText(jugador, fontSize);
+    int textX = r1.x + (r1.width - textWidth) / 2;
+    int textY = r1.y + (r1.height - fontSize) / 2;
+
+    DrawText(TextFormat(jugador), textX, textY, fontSize, amarilloTarkov);
+}
+
 void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar) {
-    DrawRectangle(275, 230, 250, 215, DARKBLUE);
+    DrawRectangle(295, 285, 200, 160, DARKBLUE);
     char fichaActual;
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             fichaActual = tablero[i][j];
-            if (GuiCircleButton((Vector2){295 + (35*j), 250 + (35*i)}, RadioCirculo, fichaActual, "")) {
+            if (GuiCircleButton((Vector2){317 + (26*j), 300 + (26*i)}, RadioCirculo, fichaActual)) {
                 *columnaAColocar = j;
             }
         }
     }
+}
+
+void partidaTerminada(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida, ) {
+
+
 }
 
 
@@ -89,6 +111,15 @@ typedef enum {
     SCREEN_PARTIDA
 } GameScreen;
 
+typedef struct {
+    char *nombre;
+    int partidasJugadas;
+    int partidasGanadas;
+    int partidasPerdidas;
+    int empates;
+    int porcentajeVictorias;
+} Jugador;
+
 bool hoverJugar = false;
 bool hoverEstadisticas = false;
 bool hoverCreditos = false;;
@@ -101,6 +132,8 @@ bool hoverEmpezarPartida = false;
 int main(void){         
     int screenWidth = 800;
     int screenHeight = 450;
+
+    Jugador jugadores;
     
     srand(time(NULL)); //Seedea un número random con el tiempo actual de la máquina con la librería de time.h
 
@@ -136,19 +169,19 @@ int main(void){
     Sound sonidoClick = LoadSound("assets/sounds/clickSound.ogg");
     Sound sonidoDrag = LoadSound("assets/sounds/dragSound.ogg"); //? Todavia no se implemento
     Sound sonidoDrop = LoadSound("assets/sounds/dropSound.ogg");
-
-    //? Cargar la fuente
-    Font fuente = LoadFont("assets/font/AGENCYB.ttf");
     
 
 
-    GameScreen currentScreen = SCREEN_PARTIDA; //! Cambiar a SCREEN_MENU al terminar
+    GameScreen currentScreen = SCREEN_MENU; //! Cambiar a SCREEN_MENU al terminar
     int PosXVolver, PosYVolver, TamXVolver, TamYVolver;
 
     
 
     
     Texture2D fondo = LoadTexture("assets/escape_n_connect.png");
+    Texture2D fotoJugador1 = LoadTexture("assets/images/USEC3.png");
+    Texture2D fotoJugador2 = LoadTexture("assets/images/BEAR3.png");
+
 
     PosXVolver = 680;
     PosYVolver = 20;
@@ -156,7 +189,7 @@ int main(void){
     TamYVolver = 40;
 
     //? Circulos
-    int RadioCirculo = 13;
+    int RadioCirculo = 8;
     int continuarPartida = 0;
     bool editar = false;
     bool editar2 = false;
@@ -279,6 +312,14 @@ int main(void){
             } else if (turno == 1) {
                 DrawText(TextFormat("Es el turno de %s", jugador2), 100, 100, 20, BLACK);
             }
+
+            if (turno == 0) {
+                drawCuadroJugador(jugador1, fotoJugador1, (Rectangle){50, 80, 150, 180}, 255);
+                drawCuadroJugador(jugador2, fotoJugador2, (Rectangle){600, 80, 150, 180}, 150);  
+            } else if (turno == 1) {
+                drawCuadroJugador(jugador1, fotoJugador1, (Rectangle){50, 80, 150, 180}, 150);
+                drawCuadroJugador(jugador2, fotoJugador2, (Rectangle){600, 80, 150, 180}, 255);  
+            }
             
             drawTablero(RadioCirculo, tablero, &columnaAColocar);
             if (columnaAColocar >= 0) {
@@ -286,6 +327,9 @@ int main(void){
                 PlaySound(sonidoDrop);
             }
             verificarVictoria(tablero, &estadoPartida, &lleno1, &lleno2, &columnasLlenas); //estadoPartida = 1 gano el 1
+            if (estadoPartida) {
+
+            }
             break;
         }
 
