@@ -1,2 +1,2 @@
 1
-AmirJudak;3;2;0;1
+AmirJudak 3 2 0 1

@@ -94,7 +94,7 @@ void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColoca
     }
 }
 
-void partidaTerminada(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida, ) {
+void partidaTerminada(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida) {
 
 
 }
@@ -179,8 +179,8 @@ int main(void){
 
     
     Texture2D fondo = LoadTexture("assets/escape_n_connect.png");
-    Texture2D fotoJugador1 = LoadTexture("assets/images/USEC3.png");
-    Texture2D fotoJugador2 = LoadTexture("assets/images/BEAR3.png");
+    Texture2D fotoJugador1 = LoadTexture("assets/images/USEC1.png");
+    Texture2D fotoJugador2 = LoadTexture("assets/images/BEAR1.png");
 
 
     PosXVolver = 680;
@@ -337,10 +337,10 @@ int main(void){
     }
 
     UnloadMusicStream(music);
-    CloseAudioDevice();
     UnloadSound(sonidoHover);
     UnloadSound(sonidoClick);
     UnloadTexture(fondo);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
