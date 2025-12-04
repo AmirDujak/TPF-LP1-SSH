@@ -64,7 +64,7 @@ int elegirTurno(void) {
     return 0;
 }
 
-void imprimirTurno(int *turno, char X[MAX_SIZE], char Y[MAX_SIZE]) {
+void dibujarTurno(int *turno, char X[MAX_SIZE], char Y[MAX_SIZE]) {
     if (*turno == 1) {
         printf("   Es el turno de %s\n", X);
     } else {
@@ -73,14 +73,20 @@ void imprimirTurno(int *turno, char X[MAX_SIZE], char Y[MAX_SIZE]) {
 }
 
 //Se inicializa el tablero con puntos
-void iniciarTablero(char b[ROWS][COLS]) {
-    for (int r = 0; r < ROWS; ++r) {
-        for (int c = 0; c < COLS; ++c) {
-            b[r][c] = '.';
+void iniciarTablero(char b[ROWS][COLS], bool *inicializado) {
+    if (*inicializado) {
+        return;
+    } else {
+        for (int r = 0; r < ROWS; ++r) {
+            for (int c = 0; c < COLS; ++c) {
+                b[r][c] = '.';
+            }
         }
+        *inicializado = true;
     }
 }
 
+//! LEER DESPUES
 static int filaDisponible(const char tablero[ROWS][COLS], int columna) {
     if (columna < 0 || columna >= COLS) {
         return -1;
@@ -93,6 +99,7 @@ static int filaDisponible(const char tablero[ROWS][COLS], int columna) {
     return -1;
 }
 
+//! LEER DESPUES
 static bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha) {
     // Horizontal y vertical
     for (int r = 0; r < ROWS; r++) {
@@ -129,6 +136,7 @@ static bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha) {
     return false;
 }
 
+//! LEER DESPUES
 static bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha) {
     int fila = filaDisponible(matriz, columna);
     if (fila < 0) {
@@ -140,6 +148,7 @@ static bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha) {
     return hayLineaDeCuatro(copia, ficha);
 }
 
+//! LEER DESPUES
 static int puntuarVentana(const char ventana[4], char fichaIA) {
     char rival = (fichaIA == 'X') ? 'O' : 'X';
     int cuentaIA = 0, cuentaRival = 0, vacios = 0;
@@ -157,6 +166,7 @@ static int puntuarVentana(const char ventana[4], char fichaIA) {
     return 0;
 }
 
+//! LEER DESPUES
 static int puntuarTablero(char matriz[ROWS][COLS], char fichaIA) {
     int puntaje = 0;
     int columnaCentral = COLS / 2;

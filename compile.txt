@@ -1,0 +1,1 @@
+gcc main.c funciones.c funcionesRayLib.c -o main -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
