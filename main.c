@@ -94,10 +94,6 @@ void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColoca
     }
 }
 
-void partidaTerminada(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida) {
-
-
-}
 
 
 typedef enum {
@@ -119,6 +115,9 @@ typedef struct {
     int empates;
     int porcentajeVictorias;
 } Jugador;
+
+
+
 
 bool hoverJugar = false;
 bool hoverEstadisticas = false;
@@ -322,13 +321,33 @@ int main(void){
             }
             
             drawTablero(RadioCirculo, tablero, &columnaAColocar);
-            if (columnaAColocar >= 0) {
-                elegirUbicacionDeFicha(&turno, tablero, &estadoPartida, jugador1, jugador2, modoDeJuego, &columnaAColocar);
-                PlaySound(sonidoDrop);
-            }
-            verificarVictoria(tablero, &estadoPartida, &lleno1, &lleno2, &columnasLlenas); //estadoPartida = 1 gano el 1
-            if (estadoPartida) {
 
+            bool movimientoRealizado = false;
+            if (estadoPartida == 0 && (modoDeJuego == 0 || (modoDeJuego == 1 && turno == 0))) {
+                if (columnaAColocar >= 0) {
+                    elegirUbicacionDeFicha(&turno, tablero, &estadoPartida, jugador1, jugador2, modoDeJuego, &columnaAColocar);
+                    PlaySound(sonidoDrop);
+                    movimientoRealizado = true;
+                }
+            }
+
+            bool turnoIA = (modoDeJuego == 1 && turno == 1) || (modoDeJuego == 2);
+            if (estadoPartida == 0 && !movimientoRealizado && turnoIA) {
+                int columnaIA = seleccionarColumnaIA(tablero, turno);
+                if (columnaIA >= 0) {
+                    int columnaTemporal = columnaIA;
+                    elegirUbicacionDeFicha(&turno, tablero, &estadoPartida, jugador1, jugador2, modoDeJuego, &columnaTemporal);
+                    PlaySound(sonidoDrop);
+                }
+            }
+
+            verificarVictoria(tablero, &estadoPartida, &lleno1, &lleno2, &columnasLlenas); //estadoPartida = 1 gano el 1
+            if (estadoPartida == 1) {
+                DrawText(TextFormat("Victoria de %s!", jugador1), 310, 260, 20, BLACK);
+            } else if (estadoPartida == 2) {
+                DrawText(TextFormat("Victoria de %s!", jugador2), 310, 260, 20, BLACK);
+            } else if (estadoPartida == 3) {
+                DrawText("Empate", 360, 260, 20, BLACK);
             }
             break;
         }

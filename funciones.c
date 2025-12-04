@@ -3,7 +3,14 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "funciones.h"
+
+static int filaDisponible(const char tablero[ROWS][COLS], int columna);
+static bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha);
+static bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha);
+static int puntuarVentana(const char ventana[4], char fichaIA);
+static int puntuarTablero(char matriz[ROWS][COLS], char fichaIA);
 
 void limpiarBuffer(void) {
     char aux;
@@ -72,6 +79,126 @@ void iniciarTablero(char b[ROWS][COLS]) {
             b[r][c] = '.';
         }
     }
+}
+
+static int filaDisponible(const char tablero[ROWS][COLS], int columna) {
+    if (columna < 0 || columna >= COLS) {
+        return -1;
+    }
+    for (int fila = ROWS - 1; fila >= 0; fila--) {
+        if (tablero[fila][columna] == '.' ) {
+            return fila;
+        }
+    }
+    return -1;
+}
+
+static bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha) {
+    // Horizontal y vertical
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c < COLS; c++) {
+            if (matriz[r][c] != ficha) {
+                continue;
+            }
+            if (c + 3 < COLS &&
+                matriz[r][c + 1] == ficha &&
+                matriz[r][c + 2] == ficha &&
+                matriz[r][c + 3] == ficha) {
+                return true;
+            }
+            if (r + 3 < ROWS &&
+                matriz[r + 1][c] == ficha &&
+                matriz[r + 2][c] == ficha &&
+                matriz[r + 3][c] == ficha) {
+                return true;
+            }
+            if (r + 3 < ROWS && c + 3 < COLS &&
+                matriz[r + 1][c + 1] == ficha &&
+                matriz[r + 2][c + 2] == ficha &&
+                matriz[r + 3][c + 3] == ficha) {
+                return true;
+            }
+            if (r + 3 < ROWS && c - 3 >= 0 &&
+                matriz[r + 1][c - 1] == ficha &&
+                matriz[r + 2][c - 2] == ficha &&
+                matriz[r + 3][c - 3] == ficha) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha) {
+    int fila = filaDisponible(matriz, columna);
+    if (fila < 0) {
+        return false;
+    }
+    char copia[ROWS][COLS];
+    memcpy(copia, matriz, sizeof(copia));
+    copia[fila][columna] = ficha;
+    return hayLineaDeCuatro(copia, ficha);
+}
+
+static int puntuarVentana(const char ventana[4], char fichaIA) {
+    char rival = (fichaIA == 'X') ? 'O' : 'X';
+    int cuentaIA = 0, cuentaRival = 0, vacios = 0;
+    for (int i = 0; i < 4; i++) {
+        if (ventana[i] == fichaIA) cuentaIA++;
+        else if (ventana[i] == rival) cuentaRival++;
+        else if (ventana[i] == '.') vacios++;
+    }
+
+    if (cuentaIA == 4) return 10000;
+    if (cuentaIA == 3 && vacios == 1) return 120;
+    if (cuentaIA == 2 && vacios == 2) return 20;
+    if (cuentaRival == 3 && vacios == 1) return -150;
+    if (cuentaRival == 2 && vacios == 2) return -40;
+    return 0;
+}
+
+static int puntuarTablero(char matriz[ROWS][COLS], char fichaIA) {
+    int puntaje = 0;
+    int columnaCentral = COLS / 2;
+    for (int r = 0; r < ROWS; r++) {
+        if (matriz[r][columnaCentral] == fichaIA) {
+            puntaje += 6;
+        }
+    }
+
+    // Horizontal
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c <= COLS - 4; c++) {
+            char ventana[4] = {matriz[r][c], matriz[r][c + 1], matriz[r][c + 2], matriz[r][c + 3]};
+            puntaje += puntuarVentana(ventana, fichaIA);
+        }
+    }
+
+    // Vertical
+    for (int c = 0; c < COLS; c++) {
+        for (int r = 0; r <= ROWS - 4; r++) {
+            char ventana[4] = {matriz[r][c], matriz[r + 1][c], matriz[r + 2][c], matriz[r + 3][c]};
+            puntaje += puntuarVentana(ventana, fichaIA);
+        }
+    }
+
+    // Diagonal principal
+    for (int r = 0; r <= ROWS - 4; r++) {
+        for (int c = 0; c <= COLS - 4; c++) {
+            char ventana[4] = {matriz[r][c], matriz[r + 1][c + 1], matriz[r + 2][c + 2], matriz[r + 3][c + 3]};
+            puntaje += puntuarVentana(ventana, fichaIA);
+        }
+    }
+
+    // Diagonal inversa
+    for (int r = 0; r <= ROWS - 4; r++) {
+        for (int c = 3; c < COLS; c++) {
+            char ventana[4] = {matriz[r][c], matriz[r + 1][c - 1], matriz[r + 2][c - 2], matriz[r + 3][c - 3]};
+            puntaje += puntuarVentana(ventana, fichaIA);
+        }
+    }
+
+    return puntaje;
 }
 
 void menu(int *juego, char X[MAX_SIZE], char Y[MAX_SIZE], int *turno) {
@@ -234,72 +361,69 @@ void colocarUbicacionIA(int *turno, char matriz[ROWS][COLS], int *estado, int *l
     }
 }
 
+int seleccionarColumnaIA(char tablero[ROWS][COLS], int turno) {
+    char fichaIA = (turno == 0) ? 'X' : 'O';
+    char rival = (fichaIA == 'X') ? 'O' : 'X';
+    int ordenColumnas[COLS] = {3, 2, 4, 1, 5, 0, 6};
+
+    for (int i = 0; i < COLS; i++) {
+        int col = ordenColumnas[i];
+        if (esJugadaGanadora(tablero, col, fichaIA)) {
+            return col;
+        }
+    }
+
+    for (int i = 0; i < COLS; i++) {
+        int col = ordenColumnas[i];
+        if (esJugadaGanadora(tablero, col, rival)) {
+            return col;
+        }
+    }
+
+    int mejorColumna = -1;
+    int mejorPuntaje = -1000000;
+    for (int i = 0; i < COLS; i++) {
+        int col = ordenColumnas[i];
+        int fila = filaDisponible(tablero, col);
+        if (fila < 0) {
+            continue;
+        }
+        char copia[ROWS][COLS];
+        memcpy(copia, tablero, sizeof(copia));
+        copia[fila][col] = fichaIA;
+        int puntaje = puntuarTablero(copia, fichaIA);
+        if (puntaje > mejorPuntaje) {
+            mejorPuntaje = puntaje;
+            mejorColumna = col;
+        }
+    }
+
+    return mejorColumna;
+}
+
 void verificarVictoria(char matriz[ROWS][COLS], int *estado, int *lleno1, int *lleno2, int *lleno) {
-    //Empate
     *lleno = 0;
-    for (int i = 0; i <= 6; i++) {
+    for (int i = 0; i < COLS; i++) {
         if (matriz[0][i] == 'X' || matriz[0][i] == 'O') {
             *lleno = *lleno + 1;
         }
     }
-    if (*lleno == 7) {
-        *estado = 3;
+    *lleno1 = 0;
+    *lleno2 = 0;
+    *estado = 0;
+
+    if (hayLineaDeCuatro(matriz, 'X')) {
+        *estado = 1;
+        return;
+    }
+    if (hayLineaDeCuatro(matriz, 'O')) {
+        *estado = 2;
         return;
     }
 
-    //Horizontal
-    for (int i = 5; i >= 0; i--) {
-        for (int j = 0; j <= 6; j++) {
-            if (matriz[i][j] == 'X') { // Si se encuentra una X, se suma uno al contador de X
-                *lleno1 += 1;
-                *lleno2 = 0; // El contador de O se reinicia
-                if (*lleno1 == 4) {
-                    *estado = 1;
-                    return;
-                }
-            } else if (matriz[i][j] == 'O') { // Si se encuentra una O, se suma uno al contador de O
-                *lleno1 = 0; // El contador de X se reinicia
-                *lleno2 += 1;
-                if (*lleno2 == 4) {
-                    *estado = 2;
-                    return;
-                }
-            } else { // Si no se encuentra ninguno, se reinicia el contador de ambos
-                *lleno1 = 0;
-                *lleno2 = 0;
-            }
-        }
+    if (*lleno == COLS) {
+        *estado = 3;
     }
-
-    //Vertical
-    *lleno1 = 0;
-    *lleno2 = 0;
-    for (int j = 0; j <= 6; j++) {
-        for (int i = 5; i >= 0; i--) {
-            if (matriz[i][j] == 'X') { // Si se encuentra una X, se suma uno al contador de X
-                *lleno1 += 1;
-                *lleno2 = 0; // El contador de O se reinicia
-                if (*lleno1 == 4) {
-                    *estado = 1;
-                    return;
-                }
-            } else if (matriz[i][j] == 'O') { // Si se encuentra una O, se suma uno al contador de O
-                *lleno1 = 0; // El contador de X se reinicia
-                *lleno2 += 1;
-                if (*lleno2 == 4) {
-                    *estado = 2;
-                    return;
-                }
-            } else { // Si no se encuentra ninguno, se reinicia el contador de ambos
-                *lleno1 = 0;
-                *lleno2 = 0;
-            }
-        }
-    }
-
-    return;
-
-    //Diagonal hacer despues
 }
 
 void guardarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int modoDeJuego, int turno, int estadoPartida, char tablero[ROWS][COLS]) {

@@ -22,6 +22,7 @@ void colocarUbicacionIA(int *turno, char matriz[ROWS][COLS], int *estado, int *l
 void verificarVictoria(char matriz[ROWS][COLS], int *estado, int *lleno1, int *lleno2, int *lleno);
 void guardarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int modoDeJuego, int turno, int estadoPartida, char tablero[ROWS][COLS]);
 int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJuego, int *turno, int *estadoPartida, char tablero[ROWS][COLS]);
+int seleccionarColumnaIA(char tablero[ROWS][COLS], int turno);
 
 //? Funciones de RayLib
 
