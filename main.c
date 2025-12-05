@@ -510,7 +510,7 @@ int main(void){
                     drawCuadroJugador(jugador2, fotoJugador2, (Rectangle){600, 80, 150, 180}, 255);  
                 }
                 
-                drawTablero(RadioCirculo, tablero, &columnaAColocar);
+                drawTablero(RadioCirculo, tablero, &columnaAColocar, turno);
 
                 bool movimientoRealizado = false;
                 if (estadoPartida == 0 && (modoDeJuego == 0 || (modoDeJuego == 1 && turno == 0))) {

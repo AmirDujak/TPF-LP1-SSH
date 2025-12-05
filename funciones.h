@@ -44,6 +44,11 @@ void reglas(void);
 int elegirTurno(void);
 void dibujarTurno(int *turno, char X[MAX_SIZE], char Y[MAX_SIZE]);
 void iniciarTablero(char b[ROWS][COLS], bool *inicializado);
+int filaDisponible(const char tablero[ROWS][COLS], int columna);
+bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha);
+bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha);
+int puntuarVentana(const char ventana[4], char fichaIA);
+int puntuarTablero(char matriz[ROWS][COLS], char fichaIA);
 void menu(int *juego, char X[MAX_SIZE], char Y[MAX_SIZE], int *turno);
 void imprimirTablero(char b[ROWS][COLS], int *estado);
 int elegirUbicacionDeFicha(int *turno, char matriz[ROWS][COLS], int *estado, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int modoDeJuego, int *columnaAColocar);
@@ -57,12 +62,12 @@ int cargarEstadisticas(const char *ruta, StatsJugador jugadores[], int *cantidad
 int guardarEstadisticas(const char *ruta, StatsJugador jugadores[], int cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]);
 int actualizarEstadisticas(const char *ruta, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int estadoPartida, StatsJugador jugadores[], int *cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]);
 void asignarNombresIA(int modoDeJuego, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE]);
-bool GuiCircleButton(Vector2 center, float radius, char fichaActual);
+bool GuiCircleButton(Vector2 center, float radius, char fichaActual, int turno);
 bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered);
 void drawTurno(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno);
 void partidaTerminada(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida);
 void drawCuadroJugador(char jugador[MAX_SIZE], Texture2D fotoJugador, Rectangle rect, int x); //? El int x es para controlar la transparencia del cuadro
-void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar);
+void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar, int turno);
 void resetearTodo(int *estadoPartida, bool *tableroInicializado, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno, int *modoDeJuego, int *columnaAColocar, int *lleno1, int *lleno2, int *columnasLlenas, bool *editar, bool *editar2, bool *estadisticasActualizadas);
 void cargarImagen(Texture2D *fotoJugador, bool *imagenCargada, char jugador[MAX_SIZE], StatsJugador jugadores[], int *cantidad, int x);
 void unloadImagen(Texture2D *fotoJugador1, Texture2D *fotoJugador2, bool *imagen1Cargada, bool *imagen2Cargada);

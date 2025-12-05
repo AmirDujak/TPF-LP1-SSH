@@ -7,11 +7,6 @@
 #include <stdbool.h>
 #include "funciones.h"
 
-static int filaDisponible(const char tablero[ROWS][COLS], int columna);
-static bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha);
-static bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha);
-static int puntuarVentana(const char ventana[4], char fichaIA);
-static int puntuarTablero(char matriz[ROWS][COLS], char fichaIA);
 
 void limpiarBuffer(void) {
     char aux;
@@ -87,8 +82,7 @@ void iniciarTablero(char b[ROWS][COLS], bool *inicializado) {
     }
 }
 
-//! LEER DESPUES
-static int filaDisponible(const char tablero[ROWS][COLS], int columna) {
+int filaDisponible(const char tablero[ROWS][COLS], int columna) {
     if (columna < 0 || columna >= COLS) {
         return -1;
     }
@@ -100,8 +94,7 @@ static int filaDisponible(const char tablero[ROWS][COLS], int columna) {
     return -1;
 }
 
-//! LEER DESPUES
-static bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha) {
+bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha) {
     // Horizontal y vertical
     for (int r = 0; r < ROWS; r++) {
         for (int c = 0; c < COLS; c++) {
@@ -137,8 +130,7 @@ static bool hayLineaDeCuatro(char matriz[ROWS][COLS], char ficha) {
     return false;
 }
 
-//! LEER DESPUES
-static bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha) {
+bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha) {
     int fila = filaDisponible(matriz, columna);
     if (fila < 0) {
         return false;
@@ -149,8 +141,7 @@ static bool esJugadaGanadora(char matriz[ROWS][COLS], int columna, char ficha) {
     return hayLineaDeCuatro(copia, ficha);
 }
 
-//! LEER DESPUES
-static int puntuarVentana(const char ventana[4], char fichaIA) {
+int puntuarVentana(const char ventana[4], char fichaIA) {
     char rival = (fichaIA == 'X') ? 'O' : 'X';
     int cuentaIA = 0, cuentaRival = 0, vacios = 0;
     for (int i = 0; i < 4; i++) {
@@ -167,8 +158,7 @@ static int puntuarVentana(const char ventana[4], char fichaIA) {
     return 0;
 }
 
-//! LEER DESPUES
-static int puntuarTablero(char matriz[ROWS][COLS], char fichaIA) {
+int puntuarTablero(char matriz[ROWS][COLS], char fichaIA) {
     int puntaje = 0;
     int columnaCentral = COLS / 2;
     for (int r = 0; r < ROWS; r++) {
@@ -835,17 +825,24 @@ void asignarNombresIA(int modoDeJuego, char jugador1[MAX_SIZE], char jugador2[MA
 }
 //!
 
-bool GuiCircleButton(Vector2 center, float radius, char fichaActual) {
+bool GuiCircleButton(Vector2 center, float radius, char fichaActual, int turno) {
     Vector2 mouse = GetMousePosition();
     bool hovered = CheckCollisionPointCircle(mouse, center, radius);
 
     Color color;
+    Color colorOver;
     if (fichaActual == 'X') {
         color = RED;
     } else if (fichaActual == 'O') {
         color = GOLD;
     } else{
         color = hovered ? LIGHTGRAY : GRAY;
+        if (turno == 0) {
+            colorOver = RED;
+        } else {
+            colorOver = GOLD;
+        }
+        DrawCircleV((Vector2){mouse.x, 260}, radius, colorOver);
     }
 
 
@@ -977,13 +974,13 @@ void drawCuadroJugador(char jugador[MAX_SIZE], Texture2D fotoJugador, Rectangle 
     DrawText(TextFormat(jugador), textX, textY, fontSize, amarilloTarkov);
 }
 
-void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar) {
+void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar, int turno) {
     DrawRectangle(295, 285, 200, 160, DARKBLUE);
     char fichaActual;
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             fichaActual = tablero[i][j];
-            if (GuiCircleButton((Vector2){317 + (26*j), 300 + (26*i)}, RadioCirculo, fichaActual)) {
+            if (GuiCircleButton((Vector2){317 + (26*j), 300 + (26*i)}, RadioCirculo, fichaActual, turno)) {
                 *columnaAColocar = j;
             }
         }
@@ -1105,3 +1102,4 @@ void leerInfoGuardado(const char *ruta, SaveSlotInfo *slot) {
     slot->existe = true;
     fclose(fp);
 }
+
