@@ -16,7 +16,6 @@ typedef enum {
     SCREEN_CREDITOS,
     SCREEN_ESTADISTICAS,
     SCREEN_JUGAR, //? Separador
-    SCREEN_CONTINUAR_PARTIDA,
     SCREEN_PARTIDA_NUEVA,
     SCREEN_PARTIDAS_GUARDADAS, //? Separador
     SCREEN_PARTIDA,
@@ -189,7 +188,7 @@ int main(void){
                     PlaySound(sonidoClick);
                     currentScreen = previousScreen;
                 }
-                DrawText("Estadisticas", 330, 80, 20, AMARILLOTARKOV);
+                DrawText("Estadisticas", 330, 70, 20, AMARILLOTARKOV);
                 GuiToggleGroup((Rectangle){250, 120, 220, 32}, "Leaderboard;Head-to-Head", &vistaEstadisticas);
 
                 if (vistaEstadisticas == 0) {
@@ -252,8 +251,8 @@ int main(void){
                         }
                     }
                 } else {
-                    DrawText("Head-to-Head", 320, 170, 18, AMARILLOTARKOV);
-                    GuiToggleGroup((Rectangle){320, 200, 160, 32}, "Absoluto;%", &modoH2H);
+                    DrawText("Head-to-Head", 320, 160, 18, AMARILLOTARKOV);
+                    GuiToggleGroup((Rectangle){320, 180, 150, 32}, "Absoluto;%", &modoH2H);
 
                     if (cantidadJugadores == 0) {
                         DrawText("Sin partidas registradas", 280, 240, 20, LIGHTGRAY);
