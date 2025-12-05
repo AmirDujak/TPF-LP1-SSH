@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <time.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -8,139 +9,6 @@
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-
-
-bool GuiCircleButton(Vector2 center, float radius, char fichaActual) {
-    Vector2 mouse = GetMousePosition();
-    bool hovered = CheckCollisionPointCircle(mouse, center, radius);
-
-    Color color;
-    if (fichaActual == 'X') {
-        color = RED;
-    } else if (fichaActual == 'O') {
-        color = GOLD;
-    } else{
-        color = hovered ? LIGHTGRAY : GRAY;
-    }
-
-
-    DrawCircleV(center, radius, color);
-
-    //? Detectar click
-    return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-}
-
-bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered) {
-    Vector2 mouse = GetMousePosition();
-    bool hovered = CheckCollisionPointRec(mouse, rect);
-
-    
-    Color color = hovered ? BORDETARKOV : SINBORDE; //? Elige el color del rectángulo
-    Color colorTexto = hovered ? BLACK : AMARILLOTARKOV; //? Elige el color del texto
-
-    
-    DrawRectangleRec(rect, color); //? Dibuja el rectángulo con el color previamente seleccionado
-
-    int fontSize = 20;
-    int textWidth = MeasureText(text, fontSize);
-    //?  Centrar texto dentro del rectángulo
-    int textX = rect.x + (rect.width  - textWidth) / 2; //? 
-    int textY = rect.y + (rect.height - fontSize) / 2;
-
-    DrawText(text, textX, textY, fontSize, colorTexto);
-
-    //? Sonido del hover
-    if (hovered && !(*wasHovered)) {
-        PlaySound(fx);
-    }
-
-    *wasHovered = hovered;
-
-    //? Detectar click
-    return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-}
-
-
-void drawTurno(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno) {
-    Color color = (*turno == 0) ? RED : GOLD;
-
-    DrawRectangleRec(rect, color);
-
-    //? Centrar texto dentro del rectangulo
-    int fontSize = 18;
-    int textWidth = MeasureText(TextFormat("Es el turno de %s", ((*turno == 0) ? jugador1 : jugador2)), fontSize);
-    int textX = rect.x + (rect.width - textWidth) / 2;
-    int textY = rect.y + (rect.height - fontSize) / 2;
-
-    DrawText(TextFormat("Es el turno de %s", ((*turno == 0) ? jugador1 : jugador2)), textX, textY, fontSize, BLACK);
-}
-
-void partidaTerminada(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida) {
-    DrawRectangleRec(rect, EXTRACCION);
-    int fontSize = 20;
-    int textWidth;
-    if (*estadoPartida >= 1 && *estadoPartida <= 2) {
-        textWidth = MeasureText(TextFormat("%s ha ganado la partida", ((*estadoPartida == 1) ? jugador1 : jugador2)), fontSize);
-    } else if (*estadoPartida == 3) {
-        textWidth = MeasureText("La partida terminó en empate", fontSize);
-    }
-
-    int textX = rect.x + (rect.width - textWidth) / 2;
-    int textY = rect.y + (rect.height - fontSize) / 2;
-
-    if (*estadoPartida == 3) {
-        DrawText("La partida terminó en empate", textX, textY, fontSize, BLACK);
-    } else {
-        DrawText(TextFormat("%s ha ganado la partida", ((*estadoPartida == 1) ? jugador1 : jugador2)), textX, textY, fontSize, BLACK);
-    }
-}
-
-void drawCuadroJugador(char jugador[MAX_SIZE], Texture2D fotoJugador, Rectangle rect, int x) { //? El int x es para controlar la transparencia del cuadro
-    Color color = (Color) {0, 0, 0, 252};
-    
-
-    Rectangle r1 = {rect.x, rect.y+147, rect.width, rect.height-147};
-
-    Color fondo = {255, 255, 255, x};
-    Color amarilloTarkov = {231, 229, 212, x}; //? Se modifica para agregarle transparencia al nombre
-
-    DrawTexture(fotoJugador, rect.x, rect.y, fondo);
-    int fontSize = 20;
-    int textWidth = MeasureText(jugador, fontSize);
-    int textX = r1.x + (r1.width - textWidth) / 2;
-    int textY = r1.y + (r1.height - fontSize) / 2;
-
-    DrawText(TextFormat(jugador), textX, textY, fontSize, amarilloTarkov);
-}
-
-void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar) {
-    DrawRectangle(295, 285, 200, 160, DARKBLUE);
-    char fichaActual;
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            fichaActual = tablero[i][j];
-            if (GuiCircleButton((Vector2){317 + (26*j), 300 + (26*i)}, RadioCirculo, fichaActual)) {
-                *columnaAColocar = j;
-            }
-        }
-    }
-}
-
-void resetearTodo(int *estadoPartida, bool *tableroInicializado, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno, int *modoDeJuego, int *columnaAColocar, int *lleno1, int *lleno2, int *columnasLlenas, bool *editar, bool *editar2) {
-    *estadoPartida = 0;
-    *tableroInicializado = false;
-    jugador1[0] = '\0';
-    jugador2[0] = '\0';
-    *turno = 0;
-    *modoDeJuego = 0;
-    *columnaAColocar = -1;
-    *lleno1 = 0;
-    *lleno2 = 0;
-    *columnasLlenas = 0;
-    *editar = false;
-    *editar2 = false;
-}
-
 
 
 typedef enum {
@@ -154,18 +22,6 @@ typedef enum {
     SCREEN_PARTIDA
 } GameScreen;
 
-typedef struct {
-    char *nombre;
-    int partidasJugadas;
-    int partidasGanadas;
-    int partidasPerdidas;
-    int empates;
-    int porcentajeVictorias;
-} Jugador;
-
-
-
-
 bool hoverJugar = false;
 bool hoverEstadisticas = false;
 bool hoverCreditos = false;
@@ -177,12 +33,24 @@ bool hoverEmpezarPartida = false;
 bool hoverVolverAlMenu = false;
 bool hoverMenu = false;
 bool tableroInicializado = false;
+bool estadisticasActualizadas = false;
+bool imagen1Cargada = false;
+bool imagen2Cargada = false;
+bool musicaCargada = false;
+
+int vistaEstadisticas = 0; //0 leaderboard, 1 head-to-head
+int modoH2H = 0; //0 absoluto, 1 porcentual
+int scrollLeaderboardY = 0;
+int scrollH2HX = 0;
+int scrollH2HY = 0;
+StatsJugador statsJugadores[MAX_JUGADORES];
+CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES];
+int cantidadJugadores = 0;
+const char *RUTA_STATS = "stats.txt";
 
 int main(void){         
     int screenWidth = 800;
     int screenHeight = 450;
-
-    Jugador jugadores;
     
     srand(time(NULL)); //Seedea un número random con el tiempo actual de la máquina con la librería de time.h
 
@@ -207,10 +75,8 @@ int main(void){
     SetTargetFPS(60);
 
     InitAudioDevice(); //? Inicia el dispositivo de audio
-    Music music = LoadMusicStream("assets/music/PrepareForEscape.mp3"); //? Carga la musica
+    Music music;
     SetMasterVolume(1.0f);
-    SetMusicVolume(music, 1.0f);
-    PlayMusicStream(music);
 
     //? Iniciar los efectos de sonido
     Sound sonidoHover = LoadSound("assets/sounds/hoverSound.ogg");
@@ -227,8 +93,10 @@ int main(void){
 
     
     Texture2D fondo = LoadTexture("assets/escape_n_connect.png");
-    Texture2D fotoJugador1 = LoadTexture("assets/images/USEC1.png");
-    Texture2D fotoJugador2 = LoadTexture("assets/images/BEAR1.png");
+    Texture2D fotoJugador1;
+    Texture2D fotoJugador2;
+
+    cargarEstadisticas(RUTA_STATS, statsJugadores, &cantidadJugadores, caraACara);
 
 
     PosXVolver = 680;
@@ -262,6 +130,7 @@ int main(void){
         float offsetX = (screenWidth - newWidth) / 2.0f;
         float offsetY = (screenHeight - newHeight) / 2.0f;
 
+        cargarMusica(&music, 0, &musicaCargada);
         UpdateMusicStream(music);
         BeginDrawing();
         ClearBackground(BLACK);
@@ -301,10 +170,148 @@ int main(void){
                     PlaySound(sonidoClick);
                     currentScreen = SCREEN_MENU;
                 }
-            break;
+                DrawText("Estadisticas", 330, 80, 20, AMARILLOTARKOV);
+                GuiToggleGroup((Rectangle){250, 120, 220, 32}, "Leaderboard;Head-to-Head", &vistaEstadisticas);
+
+                if (vistaEstadisticas == 0) {
+                    DrawText("Nombre", 120, 180, 18, AMARILLOTARKOV);
+                    DrawText("Jugadas", 250, 180, 18, AMARILLOTARKOV);
+                    DrawText("Ganadas", 360, 180, 18, AMARILLOTARKOV);
+                    DrawText("Perdidas", 470, 180, 18, AMARILLOTARKOV);
+                    DrawText("Empates", 580, 180, 18, AMARILLOTARKOV);
+                    DrawText("Win%", 690, 180, 18, AMARILLOTARKOV);
+
+                    if (cantidadJugadores == 0) {
+                        DrawText("Sin partidas registradas", 280, 230, 20, LIGHTGRAY);
+                    } else {
+                        int indices[MAX_JUGADORES];
+                        for (int i = 0; i < cantidadJugadores; i++) indices[i] = i;
+
+                        for (int i = 0; i < cantidadJugadores - 1; i++) {
+                            for (int j = i + 1; j < cantidadJugadores; j++) {
+                                StatsJugador *a = &statsJugadores[indices[i]];
+                                StatsJugador *b = &statsJugadores[indices[j]];
+                                bool swap = false;
+                                if (b->partidasGanadas > a->partidasGanadas) swap = true;
+                                else if (b->partidasGanadas == a->partidasGanadas && b->porcentajeVictorias > a->porcentajeVictorias) swap = true;
+                                if (swap) {
+                                    int tmp = indices[i];
+                                    indices[i] = indices[j];
+                                    indices[j] = tmp;
+                                }
+                            }
+                        }
+
+                        int areaX = 110;
+                        int areaY = 210;
+                        int areaH = 200;
+                        int contentH = cantidadJugadores * 26;
+                        if (contentH <= areaH) {
+                            scrollLeaderboardY = 0;
+                        } else {
+                            scrollLeaderboardY += (int)(GetMouseWheelMove() * 12);
+                            int minScroll = areaH - contentH;
+                            if (scrollLeaderboardY < minScroll) scrollLeaderboardY = minScroll;
+                            if (scrollLeaderboardY > 0) scrollLeaderboardY = 0;
+                        }
+
+                        BeginScissorMode(areaX, areaY, 580, areaH);
+                        for (int fila = 0; fila < cantidadJugadores; fila++) {
+                            int idx = indices[fila];
+                            StatsJugador *j = &statsJugadores[idx];
+                            int y = areaY + scrollLeaderboardY + fila * 26;
+                            DrawText(j->nombre, 120, y, 16, WHITE);
+                            DrawText(TextFormat("%d", j->partidasJugadas), 260, y, 16, WHITE);
+                            DrawText(TextFormat("%d", j->partidasGanadas), 370, y, 16, WHITE);
+                            DrawText(TextFormat("%d", j->partidasPerdidas), 480, y, 16, WHITE);
+                            DrawText(TextFormat("%d", j->empates), 590, y, 16, WHITE);
+                            DrawText(TextFormat("%.1f%%", j->porcentajeVictorias), 690, y, 16, WHITE);
+                        }
+                        EndScissorMode();
+                        if (contentH > areaH) {
+                            DrawText("Rueda del mouse para scroll", 280, 420, 12, LIGHTGRAY);
+                        }
+                    }
+                } else {
+                    DrawText("Head-to-Head", 320, 170, 18, AMARILLOTARKOV);
+                    GuiToggleGroup((Rectangle){320, 200, 160, 32}, "Absoluto;%", &modoH2H);
+
+                    if (cantidadJugadores == 0) {
+                        DrawText("Sin partidas registradas", 280, 240, 20, LIGHTGRAY);
+                        break;
+                    }
+
+                    int rowHeaderW = 90;
+                    int cellW = 90;
+                    int cellH = 26;
+                    int areaX = 120;
+                    int areaY = 240;
+                    int areaW = 620;
+                    int areaH = 150;
+
+                    int contentW = rowHeaderW + (cantidadJugadores * cellW);
+                    int contentH = cantidadJugadores * cellH;
+
+                    float wheel = GetMouseWheelMove();
+                    if (contentH <= areaH) {
+                        scrollH2HY = 0;
+                    } else {
+                        scrollH2HY += (int)(wheel * 12);
+                        int minY = areaH - contentH;
+                        if (scrollH2HY < minY) scrollH2HY = minY;
+                        if (scrollH2HY > 0) scrollH2HY = 0;
+                    }
+
+                    if (contentW <= areaW) {
+                        scrollH2HX = 0;
+                    } else {
+                        if (IsKeyDown(KEY_LEFT)) scrollH2HX += 6;
+                        if (IsKeyDown(KEY_RIGHT)) scrollH2HX -= 6;
+                        int minX = areaW - contentW;
+                        if (scrollH2HX < minX) scrollH2HX = minX;
+                        if (scrollH2HX > 0) scrollH2HX = 0;
+                    }
+
+                    BeginScissorMode(areaX, areaY - 24, areaW, areaH + 30);
+                    for (int c = 0; c < cantidadJugadores; c++) {
+                        int x = areaX + rowHeaderW + scrollH2HX + cellW * c;
+                        DrawText(statsJugadores[c].nombre, x + 6, areaY - 18, 12, AMARILLOTARKOV);
+                    }
+                    for (int r = 0; r < cantidadJugadores; r++) {
+                        int y = areaY + scrollH2HY + cellH * r;
+                        DrawText(statsJugadores[r].nombre, areaX + 4, y + 6, 12, AMARILLOTARKOV);
+                        for (int c = 0; c < cantidadJugadores; c++) {
+                            const CaraACara *celda = &caraACara[r][c];
+                            char buffer[32];
+                            if (r == c) {
+                                strcpy(buffer, "--");
+                            } else if (modoH2H == 0) {
+                                snprintf(buffer, sizeof(buffer), "%d-%d-%d", celda->w, celda->l, celda->e);
+                            } else {
+                                int total = celda->w + celda->l + celda->e;
+                                if (total == 0) {
+                                    strcpy(buffer, "0%-0%-0%");
+                                } else {
+                                    int pw = (int)((celda->w * 100) / total);
+                                    int pl = (int)((celda->l * 100) / total);
+                                    int pe = 100 - pw - pl;
+                                    snprintf(buffer, sizeof(buffer), "%d%%-%d%%-%d%%", pw, pl, pe);
+                                }
+                            }
+                            int x = areaX + rowHeaderW + scrollH2HX + cellW * c;
+                            DrawRectangleLines(x, y, cellW, cellH, BORDETARKOV);
+                            DrawText(buffer, x + 8, y + 6, 12, WHITE);
+                        }
+                    }
+                    EndScissorMode();
+                    if (contentH > areaH || contentW > areaW) {
+                        DrawText("Rueda = scroll vertical, flechas izquierda/derecha = scroll horizontal", 120, 410, 12, LIGHTGRAY);
+                    }
+                }
+                break;
 
 
-            case SCREEN_JUGAR: //? Continuar partida, Partida nueva o partidas guardadas
+            case SCREEN_JUGAR: //? Partida nueva o partidas guardadas
                 if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
                     PlaySound(sonidoClick);
                     currentScreen = SCREEN_MENU;
@@ -343,17 +350,28 @@ int main(void){
                     editar2 = !editar2;
                 }
 
-                GuiToggleGroup((Rectangle){302, 200, 64, 38}, "PvP;PvE;EvE", &modoDeJuego); //? PvP sería 0, PvE sería 1, EvE sería 2;
-                DrawText("Elige quien empieza la partida", 255, 260, 20, AMARILLOTARKOV);
-                GuiToggleGroup((Rectangle){327, 312, 72, 38}, "Jugador 1;Jugador 2", &turno); //? Jugador 1 seria 0, jugador 2 sería 1
-                if(GuiRectButton((Rectangle){313, 373, 176, 48}, "Empezar partida", sonidoHover, &hoverEmpezarPartida)) {
-                    PlaySound(sonidoClick);
-                    currentScreen = SCREEN_PARTIDA;
-                }
+            GuiToggleGroup((Rectangle){302, 200, 64, 38}, "PvP;PvE;EvE", &modoDeJuego); //? PvP sería 0, PvE sería 1, EvE sería 2;
+            DrawText("Elige quien empieza la partida", 255, 260, 20, AMARILLOTARKOV);
+            GuiToggleGroup((Rectangle){327, 312, 72, 38}, "Jugador 1;Jugador 2", &turno); //? Jugador 1 seria 0, jugador 2 sería 1
+            if(GuiRectButton((Rectangle){313, 373, 176, 48}, "Empezar partida", sonidoHover, &hoverEmpezarPartida)) {
+                PlaySound(sonidoClick);
+                estadoPartida = 0;
+                columnasLlenas = 0;
+                lleno1 = 0;
+                lleno2 = 0;
+                columnaAColocar = -1;
+                tableroInicializado = false;
+                estadisticasActualizadas = false;
+                unloadMusica(&music, &musicaCargada);
+                cargarMusica(&music, 5, &musicaCargada);
+                currentScreen = SCREEN_PARTIDA;
+            }
             break;
 
 
             case SCREEN_PARTIDA: //? Juego
+                cargarImagen(&fotoJugador1, &imagen1Cargada, jugador1, statsJugadores, &cantidadJugadores, 1);
+                cargarImagen(&fotoJugador2, &imagen2Cargada, jugador2, statsJugadores, &cantidadJugadores, 2);
                 iniciarTablero(tablero, &tableroInicializado);
                 if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamXVolver}, "Menú", sonidoHover, &hoverMenu)) {
                     DrawText("Walter", PosXVolver, PosYVolver, 50, AMARILLOTARKOV);
@@ -391,10 +409,16 @@ int main(void){
                 }
 
                 verificarVictoria(tablero, &estadoPartida, &lleno1, &lleno2, &columnasLlenas); //estadoPartida = 1 gano el 1
+                if (estadoPartida != 0 && !estadisticasActualizadas) {
+                    actualizarEstadisticas(RUTA_STATS, jugador1, jugador2, estadoPartida, statsJugadores, &cantidadJugadores, caraACara);
+                    estadisticasActualizadas = true;
+                }
                 if (estadoPartida) {
                     partidaTerminada((Rectangle){100, 80, 600, 200}, jugador1, jugador2, &estadoPartida);
                     if (GuiRectButton((Rectangle){300, 200, 170, 70}, "Volver al menu", sonidoHover, &hoverVolverAlMenu)) {
-                        resetearTodo(&estadoPartida, &tableroInicializado, jugador1, jugador2, &turno, &modoDeJuego, &columnaAColocar, &lleno1, &lleno2, &columnasLlenas, &editar, &editar2);
+                        resetearTodo(&estadoPartida, &tableroInicializado, jugador1, jugador2, &turno, &modoDeJuego, &columnaAColocar, &lleno1, &lleno2, &columnasLlenas, &editar, &editar2, &estadisticasActualizadas);
+                        unloadImagen(&fotoJugador1, &fotoJugador2, &imagen1Cargada, &imagen2Cargada);
+                        unloadMusica(&music, &musicaCargada);
                         currentScreen = SCREEN_MENU;
                     }
                 }

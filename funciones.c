@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -19,7 +20,7 @@ void limpiarBuffer(void) {
 
 int generarRandom(void) { //Genera un número aleatorio entre el mínimo y el máximo (en este caso, 1 y 7 respesctivamente)
     int min = 1;
-    int max = 7;
+    int max = 4;
     int randomInRange = (rand() & (max - min + 1)) + min;
     return randomInRange;
 }
@@ -599,4 +600,392 @@ int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJ
 
 
     return 0;
+}
+
+//!
+static void recalcularPorcentaje(StatsJugador *j) {
+    if (j->partidasJugadas > 0) {
+        j->porcentajeVictorias = (100.0f * j->partidasGanadas) / j->partidasJugadas;
+    } else {
+        j->porcentajeVictorias = 0.0f;
+    }
+}
+
+static void limpiarCaraACara(CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]) {
+    for (int i = 0; i < MAX_JUGADORES; i++) {
+        for (int j = 0; j < MAX_JUGADORES; j++) {
+            caraACara[i][j].w = 0;
+            caraACara[i][j].l = 0;
+            caraACara[i][j].e = 0;
+        }
+    }
+}
+
+static int buscarJugadorPorNombre(StatsJugador jugadores[], int cantidad, const char *nombre) {
+    for (int i = 0; i < cantidad; i++) {
+        if (strcasecmp(jugadores[i].nombre, nombre) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int insertarJugadorOrdenado(StatsJugador jugadores[], int *cantidad, const char *nombre, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]) {
+    if (*cantidad >= MAX_JUGADORES) {
+        return -1;
+    }
+    int pos = *cantidad;
+    for (int i = 0; i < *cantidad; i++) {
+        if (strcasecmp(nombre, jugadores[i].nombre) < 0) {
+            pos = i;
+            break;
+        }
+    }
+    for (int r = *cantidad; r > pos; r--) {
+        for (int c = 0; c < *cantidad; c++) {
+            caraACara[r][c] = caraACara[r - 1][c];
+        }
+    }
+    for (int r = 0; r <= *cantidad; r++) {
+        for (int c = *cantidad; c > pos; c--) {
+            caraACara[r][c] = caraACara[r][c - 1];
+        }
+    }
+    for (int i = *cantidad; i > pos; i--) {
+        jugadores[i] = jugadores[i - 1];
+    }
+    strncpy(jugadores[pos].nombre, nombre, MAX_SIZE - 1);
+    jugadores[pos].nombre[MAX_SIZE - 1] = '\0';
+    jugadores[pos].partidasJugadas = 0;
+    jugadores[pos].partidasGanadas = 0;
+    jugadores[pos].partidasPerdidas = 0;
+    jugadores[pos].empates = 0;
+    jugadores[pos].porcentajeVictorias = 0.0f;
+    for (int c = 0; c <= *cantidad; c++) {
+        caraACara[pos][c].w = 0;
+        caraACara[pos][c].l = 0;
+        caraACara[pos][c].e = 0;
+        caraACara[c][pos].w = 0;
+        caraACara[c][pos].l = 0;
+        caraACara[c][pos].e = 0;
+    }
+    (*cantidad)++;
+    return pos;
+}
+
+int cargarEstadisticas(const char *ruta, StatsJugador jugadores[], int *cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]) {
+    limpiarCaraACara(caraACara);
+    *cantidad = 0;
+    FILE *fp = fopen(ruta, "r");
+    if (!fp) {
+        return 0;
+    }
+
+    int n = 0;
+    if (fscanf(fp, "%d", &n) != 1) {
+        fclose(fp);
+        return -1;
+    }
+    if (n < 0) n = 0;
+    if (n > MAX_JUGADORES) n = MAX_JUGADORES;
+
+    for (int i = 0; i < n; i++) {
+        StatsJugador *j = &jugadores[i];
+        if (fscanf(fp, "%99s %d %d %d %d", j->nombre, &j->partidasJugadas, &j->partidasGanadas, &j->partidasPerdidas, &j->empates) != 5) {
+            n = i;
+            break;
+        }
+        recalcularPorcentaje(j);
+    }
+    *cantidad = n;
+
+    char marker[8] = {0};
+    fscanf(fp, "%7s", marker);
+    if (strcmp(marker, "H2H") == 0) {
+        for (int i = 0; i < *cantidad; i++) {
+            for (int j = 0; j < *cantidad; j++) {
+                if (fscanf(fp, "%d %d %d", &caraACara[i][j].w, &caraACara[i][j].l, &caraACara[i][j].e) != 3) {
+                    caraACara[i][j].w = 0;
+                    caraACara[i][j].l = 0;
+                    caraACara[i][j].e = 0;
+                }
+            }
+        }
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+int guardarEstadisticas(const char *ruta, StatsJugador jugadores[], int cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]) {
+    FILE *fp = fopen(ruta, "w");
+    if (!fp) {
+        return -1;
+    }
+    fprintf(fp, "%d\n", cantidad);
+    for (int i = 0; i < cantidad; i++) {
+        StatsJugador *j = &jugadores[i];
+        fprintf(fp, "%s %d %d %d %d\n", j->nombre, j->partidasJugadas, j->partidasGanadas, j->partidasPerdidas, j->empates);
+    }
+    fprintf(fp, "H2H\n");
+    for (int i = 0; i < cantidad; i++) {
+        for (int j = 0; j < cantidad; j++) {
+            fprintf(fp, "%d %d %d ", caraACara[i][j].w, caraACara[i][j].l, caraACara[i][j].e);
+        }
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+    return 0;
+}
+
+int actualizarEstadisticas(const char *ruta, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int estadoPartida, StatsJugador jugadores[], int *cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]) {
+    if (estadoPartida == 0) {
+        return 0;
+    }
+    if (jugador1[0] == '\0' || jugador2[0] == '\0') {
+        return 0;
+    }
+
+    int idx1 = buscarJugadorPorNombre(jugadores, *cantidad, jugador1);
+    if (idx1 < 0) {
+        idx1 = insertarJugadorOrdenado(jugadores, cantidad, jugador1, caraACara);
+    }
+    int idx2 = buscarJugadorPorNombre(jugadores, *cantidad, jugador2);
+    if (idx2 < 0) {
+        idx2 = insertarJugadorOrdenado(jugadores, cantidad, jugador2, caraACara);
+    }
+
+    if (idx1 < 0 || idx2 < 0) {
+        return -1;
+    }
+
+    jugadores[idx1].partidasJugadas++;
+    jugadores[idx2].partidasJugadas++;
+
+    if (estadoPartida == 1) {
+        jugadores[idx1].partidasGanadas++;
+        jugadores[idx2].partidasPerdidas++;
+        if (idx1 != idx2) {
+            caraACara[idx1][idx2].w++;
+            caraACara[idx2][idx1].l++;
+        }
+    } else if (estadoPartida == 2) {
+        jugadores[idx2].partidasGanadas++;
+        jugadores[idx1].partidasPerdidas++;
+        if (idx1 != idx2) {
+            caraACara[idx2][idx1].w++;
+            caraACara[idx1][idx2].l++;
+        }
+    } else if (estadoPartida == 3) {
+        jugadores[idx1].empates++;
+        jugadores[idx2].empates++;
+        if (idx1 != idx2) {
+            caraACara[idx1][idx2].e++;
+            caraACara[idx2][idx1].e++;
+        }
+    }
+
+    recalcularPorcentaje(&jugadores[idx1]);
+    recalcularPorcentaje(&jugadores[idx2]);
+
+    guardarEstadisticas(ruta, jugadores, *cantidad, caraACara);
+    return 0;
+}
+//!
+
+bool GuiCircleButton(Vector2 center, float radius, char fichaActual) {
+    Vector2 mouse = GetMousePosition();
+    bool hovered = CheckCollisionPointCircle(mouse, center, radius);
+
+    Color color;
+    if (fichaActual == 'X') {
+        color = RED;
+    } else if (fichaActual == 'O') {
+        color = GOLD;
+    } else{
+        color = hovered ? LIGHTGRAY : GRAY;
+    }
+
+
+    DrawCircleV(center, radius, color);
+
+    //? Detectar click
+    return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+}
+
+bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered) {
+    Vector2 mouse = GetMousePosition();
+    bool hovered = CheckCollisionPointRec(mouse, rect);
+
+    
+    Color color = hovered ? BORDETARKOV : SINBORDE; //? Elige el color del rectángulo
+    Color colorTexto = hovered ? BLACK : AMARILLOTARKOV; //? Elige el color del texto
+
+    
+    DrawRectangleRec(rect, color); //? Dibuja el rectángulo con el color previamente seleccionado
+
+    int fontSize = 20;
+    int textWidth = MeasureText(text, fontSize);
+    //?  Centrar texto dentro del rectángulo
+    int textX = rect.x + (rect.width  - textWidth) / 2; //? 
+    int textY = rect.y + (rect.height - fontSize) / 2;
+
+    DrawText(text, textX, textY, fontSize, colorTexto);
+
+    //? Sonido del hover
+    if (hovered && !(*wasHovered)) {
+        PlaySound(fx);
+    }
+
+    *wasHovered = hovered;
+
+    //? Detectar click
+    return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+}
+
+void drawTurno(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno) {
+    Color color = (*turno == 0) ? RED : GOLD;
+
+    DrawRectangleRec(rect, color);
+
+    //? Centrar texto dentro del rectangulo
+    int fontSize = 18;
+    int textWidth = MeasureText(TextFormat("Es el turno de %s", ((*turno == 0) ? jugador1 : jugador2)), fontSize);
+    int textX = rect.x + (rect.width - textWidth) / 2;
+    int textY = rect.y + (rect.height - fontSize) / 2;
+
+    DrawText(TextFormat("Es el turno de %s", ((*turno == 0) ? jugador1 : jugador2)), textX, textY, fontSize, BLACK);
+}
+
+void partidaTerminada(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida) {
+    DrawRectangleRec(rect, EXTRACCION);
+    int fontSize = 20;
+    int textWidth = 0;
+    if (*estadoPartida >= 1 && *estadoPartida <= 2) {
+        textWidth = MeasureText(TextFormat("%s ha ganado la partida", ((*estadoPartida == 1) ? jugador1 : jugador2)), fontSize);
+    } else if (*estadoPartida == 3) {
+        textWidth = MeasureText("La partida terminó en empate", fontSize);
+    }
+
+    int textX = rect.x + (rect.width - textWidth) / 2;
+    int textY = rect.y + (rect.height - fontSize) / 2;
+
+    if (*estadoPartida == 3) {
+        DrawText("La partida terminó en empate", textX, textY, fontSize, BLACK);
+    } else {
+        DrawText(TextFormat("%s ha ganado la partida", ((*estadoPartida == 1) ? jugador1 : jugador2)), textX, textY, fontSize, BLACK);
+    }
+}
+
+void drawCuadroJugador(char jugador[MAX_SIZE], Texture2D fotoJugador, Rectangle rect, int x) { //? El int x es para controlar la transparencia del cuadro
+    Color color = (Color) {0, 0, 0, 252};
+    
+
+    Rectangle r1 = {rect.x, rect.y+147, rect.width, rect.height-147};
+
+    Color fondo = {255, 255, 255, x};
+    Color amarilloTarkov = {231, 229, 212, x}; //? Se modifica para agregarle transparencia al nombre
+
+    DrawTexture(fotoJugador, rect.x, rect.y, fondo);
+    int fontSize = 20;
+    int textWidth = MeasureText(jugador, fontSize);
+    int textX = r1.x + (r1.width - textWidth) / 2;
+    int textY = r1.y + (r1.height - fontSize) / 2;
+
+    DrawText(TextFormat(jugador), textX, textY, fontSize, amarilloTarkov);
+}
+
+void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar) {
+    DrawRectangle(295, 285, 200, 160, DARKBLUE);
+    char fichaActual;
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            fichaActual = tablero[i][j];
+            if (GuiCircleButton((Vector2){317 + (26*j), 300 + (26*i)}, RadioCirculo, fichaActual)) {
+                *columnaAColocar = j;
+            }
+        }
+    }
+}
+
+void resetearTodo(int *estadoPartida, bool *tableroInicializado, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno, int *modoDeJuego, int *columnaAColocar, int *lleno1, int *lleno2, int *columnasLlenas, bool *editar, bool *editar2, bool *estadisticasActualizadas) {
+    *estadoPartida = 0;
+    *tableroInicializado = false;
+    jugador1[0] = '\0';
+    jugador2[0] = '\0';
+    *turno = 0;
+    *modoDeJuego = 0;
+    *columnaAColocar = -1;
+    *lleno1 = 0;
+    *lleno2 = 0;
+    *columnasLlenas = 0;
+    *editar = false;
+    *editar2 = false;
+    *estadisticasActualizadas = false;
+}
+
+void cargarImagen(Texture2D *fotoJugador, bool *imagenCargada, char jugador[MAX_SIZE], StatsJugador jugadores[], int *cantidad, int x) {
+    if (*imagenCargada) {
+        return;
+    } else {
+        int idJugador = buscarJugadorPorNombre(jugadores, *cantidad, jugador);
+        if (x == 1) {
+            printf("X = %d\n", x);
+            if (jugadores[idJugador].partidasGanadas >= 2 && jugadores[idJugador].partidasGanadas < 4) {
+                *fotoJugador = LoadTexture("assets/images/USEC2.png");
+            } else if (jugadores[idJugador].partidasGanadas >= 4) {
+                *fotoJugador = LoadTexture("assets/images/USEC3.png");
+            } else {
+                *fotoJugador = LoadTexture("assets/images/USEC1.png");
+            }
+        } else if (x == 2) {
+            if (jugadores[idJugador].partidasGanadas >= 2 && jugadores[idJugador].partidasGanadas < 4) {
+                *fotoJugador = LoadTexture("assets/images/BEAR2.png");
+            } else if (jugadores[idJugador].partidasGanadas >= 4) {
+                *fotoJugador = LoadTexture("assets/images/BEAR3.png");
+            } else {
+                *fotoJugador = LoadTexture("assets/images/BEAR1.png");
+            }
+        }
+        *imagenCargada = true;
+    }
+}
+
+void unloadImagen(Texture2D *fotoJugador1, Texture2D *fotoJugador2, bool *imagen1Cargada, bool *imagen2Cargada) {
+    UnloadTexture(*fotoJugador1);
+    UnloadTexture(*fotoJugador2);
+    *imagen1Cargada = false;
+    *imagen2Cargada = false;
+}
+
+void cargarMusica(Music *musica, int y, bool *musicaCargada) {
+    if (*musicaCargada || IsMusicStreamPlaying(*musica)) { //? Si ya hay musica, no se ejecuta el resto
+        return;
+    }
+
+    if (y) {
+        *musica = LoadMusicStream("assets/music/matchSongs/Countdown.mp3");
+        PlayMusicStream(*musica);
+        *musicaCargada = true;
+        return;
+    } else {
+        int x = generarRandom();
+        
+        if (x == 1) {
+            *musica = LoadMusicStream("assets/music/PrepareForEscape.mp3");
+        } else if (x == 2) {
+            *musica = LoadMusicStream("assets/music/Desolated.mp3");
+        } else if (x == 3) {
+            *musica = LoadMusicStream("assets/music/DarkHorizon.mp3");
+        } else if (x == 4) {
+            *musica = LoadMusicStream("assets/music/TheBloodWeSpill.mp3");
+        }
+        *musicaCargada = true;
+        PlayMusicStream(*musica);
+    }
+}
+
+void unloadMusica(Music *musica, bool *musicaCargada) {
+    UnloadMusicStream(*musica);
+    *musicaCargada = false;
 }

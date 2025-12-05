@@ -3,11 +3,28 @@
 #define ROWS 6
 #define COLS 7
 #define MAX_SIZE 100
+#define MAX_JUGADORES 50
 #define AMARILLOTARKOV (Color) {231, 229, 212, 255}
 #define SINBORDE (Color) {255, 255, 255, 0}
 #define BORDETARKOV (Color) {198, 192, 164, 255}
 #define EXTRACCION (Color) {157, 219, 35, 255}
 #include <stdbool.h>
+#include "raylib.h"
+
+typedef struct {
+    char nombre[MAX_SIZE];
+    int partidasJugadas;
+    int partidasGanadas;
+    int partidasPerdidas;
+    int empates;
+    float porcentajeVictorias;
+} StatsJugador;
+
+typedef struct {
+    int w;
+    int l;
+    int e;
+} CaraACara;
 
 // jugador1 jugador2 modoDeJuego turno tablero estadoPartida
 void limpiarBuffer(void);
@@ -25,7 +42,19 @@ void verificarVictoria(char matriz[ROWS][COLS], int *estado, int *lleno1, int *l
 void guardarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int modoDeJuego, int turno, int estadoPartida, char tablero[ROWS][COLS]);
 int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJuego, int *turno, int *estadoPartida, char tablero[ROWS][COLS]);
 int seleccionarColumnaIA(char tablero[ROWS][COLS], int turno);
-
-//? Funciones de RayLib
+int cargarEstadisticas(const char *ruta, StatsJugador jugadores[], int *cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]);
+int guardarEstadisticas(const char *ruta, StatsJugador jugadores[], int cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]);
+int actualizarEstadisticas(const char *ruta, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int estadoPartida, StatsJugador jugadores[], int *cantidad, CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES]);
+bool GuiCircleButton(Vector2 center, float radius, char fichaActual);
+bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered);
+void drawTurno(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno);
+void partidaTerminada(Rectangle rect, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *estadoPartida);
+void drawCuadroJugador(char jugador[MAX_SIZE], Texture2D fotoJugador, Rectangle rect, int x); //? El int x es para controlar la transparencia del cuadro
+void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColocar);
+void resetearTodo(int *estadoPartida, bool *tableroInicializado, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno, int *modoDeJuego, int *columnaAColocar, int *lleno1, int *lleno2, int *columnasLlenas, bool *editar, bool *editar2, bool *estadisticasActualizadas);
+void cargarImagen(Texture2D *fotoJugador, bool *imagenCargada, char jugador[MAX_SIZE], StatsJugador jugadores[], int *cantidad, int x);
+void unloadImagen(Texture2D *fotoJugador1, Texture2D *fotoJugador2, bool *imagen1Cargada, bool *imagen2Cargada);
+void cargarMusica(Music *musica, int y, bool *musicaCargada);
+void unloadMusica(Music *musica, bool *musicaCargada);
 
 #endif
