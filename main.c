@@ -36,7 +36,6 @@ bool tableroInicializado = false;
 bool estadisticasActualizadas = false;
 bool imagen1Cargada = false;
 bool imagen2Cargada = false;
-bool musicaCargada = false;
 
 int vistaEstadisticas = 0; //0 leaderboard, 1 head-to-head
 int modoH2H = 0; //0 absoluto, 1 porcentual
@@ -78,6 +77,7 @@ int main(void){
     Music music = LoadMusicStream("assets/music/PrepareForEscape.mp3");
     SetMasterVolume(1.0f);
     SetMusicVolume(music, 1.0f);
+    PlayMusicStream(music);
 
     //? Iniciar los efectos de sonido
     Sound sonidoHover = LoadSound("assets/sounds/hoverSound.ogg");
