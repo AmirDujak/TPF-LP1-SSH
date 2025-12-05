@@ -505,17 +505,30 @@ void guardarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int modoDe
     return;
 }
 
-int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJuego, int *turno, int *estadoPartida, char tablero[ROWS][COLS]) {
-    int partidaACargar = 1;
-    FILE *fp;
-    //printf("Ingrese el numero de partida a cargar del 1 al 3 (-1 para cancelar): ");
-    //scanf("%d", &partidaACargar);
-    if (partidaACargar == -1) {return -1;}
-    while (partidaACargar < 1 || partidaACargar > 3) {
-        printf("Ingrese un numero del 1 al 3 (-1 para cancelar): ");
-        scanf("%d", &partidaACargar);
-        if (partidaACargar == -1) {return -1;}
+int guardarPartidaEnSlot(const char *ruta, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int modoDeJuego, int turno, int estadoPartida, char tablero[ROWS][COLS]) {
+    FILE *fp = fopen(ruta, "w");
+    if (!fp) {
+        return -1;
     }
+    fputs(jugador1, fp);
+    fprintf(fp, "\n");
+    fputs(jugador2, fp);
+    fprintf(fp, "\n");
+    fprintf(fp, "%d\n%d\n%d\n", modoDeJuego, turno, estadoPartida);
+    char contenidoFila[COLS];
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            contenidoFila[j] = tablero[i][j];
+        }
+        fputs(contenidoFila, fp);
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+    return 0;
+}
+
+int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJuego, int *turno, int *estadoPartida, char tablero[ROWS][COLS], int partidaACargar) {
+    FILE *fp;
 
     char contenidoFila[COLS];
     int a = 0;
@@ -545,7 +558,6 @@ int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJ
         }
         printf("Se cargo la partida del archivo 1!\n");
         fclose(fp);
-        sleep(2);
     } else if (partidaACargar == 2) {
         fp = fopen("save1.txt", "r");
         if (fp == NULL) {printf("No se pudo cargar el archivo 2\n"); return -1;}
@@ -570,7 +582,6 @@ int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJ
         }
         printf("Se cargo la partida del archivo 2!\n");
         fclose(fp);
-        sleep(2);
     } else {
         fp = fopen("save3.txt", "r");
         if (fp == NULL) {printf("No se pudo cargar el archivo 3\n"); return -1;}
@@ -595,7 +606,6 @@ int cargarPartida(char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *modoDeJ
         }
         printf("Se cargo la partida del archivo 1!\n");
         fclose(fp);
-        sleep(2);
     }
 
 
@@ -791,6 +801,38 @@ int actualizarEstadisticas(const char *ruta, char jugador1[MAX_SIZE], char jugad
     guardarEstadisticas(ruta, jugadores, *cantidad, caraACara);
     return 0;
 }
+
+void asignarNombresIA(int modoDeJuego, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE]) {
+    // Lista editable de nombres de IA
+    static const char *nombresIA[] = {
+        "Killa",
+        "Tagilla",
+        "Shturman",
+        "Glukhar"
+    };
+    const int total = (int)(sizeof(nombresIA) / sizeof(nombresIA[0]));
+    if (total == 0) {
+        return;
+    }
+
+    if (modoDeJuego == 1) { // PvE: solo la IA (jugador2)
+        int idx = rand() % total;
+        strncpy(jugador2, nombresIA[idx], MAX_SIZE - 1);
+        jugador2[MAX_SIZE - 1] = '\0';
+    } else if (modoDeJuego == 2) { // EvE: dos IAs
+        int idx1 = rand() % total;
+        int idx2 = rand() % total;
+        if (total > 1) {
+            while (idx2 == idx1) {
+                idx2 = rand() % total;
+            }
+        }
+        strncpy(jugador1, nombresIA[idx1], MAX_SIZE - 1);
+        jugador1[MAX_SIZE - 1] = '\0';
+        strncpy(jugador2, nombresIA[idx2], MAX_SIZE - 1);
+        jugador2[MAX_SIZE - 1] = '\0';
+    }
+}
 //!
 
 bool GuiCircleButton(Vector2 center, float radius, char fichaActual) {
@@ -831,6 +873,46 @@ bool GuiRectButton(Rectangle rect, const char *text, Sound fx, bool *wasHovered)
     int textY = rect.y + (rect.height - fontSize) / 2;
 
     DrawText(text, textX, textY, fontSize, colorTexto);
+
+    //? Sonido del hover
+    if (hovered && !(*wasHovered)) {
+        PlaySound(fx);
+    }
+
+    *wasHovered = hovered;
+
+    //? Detectar click
+    return hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+}
+
+bool GuiRectButtonGuardado(Rectangle rect, SaveSlotInfo save, Sound fx, bool *wasHovered) {
+    Vector2 mouse = GetMousePosition();
+    bool hovered = CheckCollisionPointRec(mouse, rect);
+
+    
+    Color color = hovered ? BORDETARKOV : SINBORDE; //? Elige el color del rectángulo
+    Color colorTexto = hovered ? BLACK : AMARILLOTARKOV; //? Elige el color del texto
+    int textX, textY, fontSize;
+
+    
+    DrawRectangleRec(rect, color); //? Dibuja el rectángulo con el color previamente seleccionado
+    if (save.existe == false) {
+        int fontSize = 20;
+        int textWidth = MeasureText("Espacio vacio", fontSize);
+        //?  Centrar texto dentro del rectángulo
+        int textX = rect.x + (rect.width  - textWidth) / 2; //? 
+        int textY = rect.y + (rect.height - fontSize) / 2;
+        DrawText("Espacio vacio", textX, textY, fontSize, colorTexto);
+        return false;;
+    } else {
+        int fontSize = 20;
+        const char *turnoNombre = (save.turno == 0) ? save.nombre1 : save.nombre2;
+        int textWidth = MeasureText(TextFormat("%s vs %s, turno de %s", save.nombre1, save.nombre2, turnoNombre), fontSize);
+        //?  Centrar texto dentro del rectángulo
+        int textX = rect.x + (rect.width  - textWidth) / 2; //? 
+        int textY = rect.y + (rect.height - fontSize) / 2;
+        DrawText(TextFormat("%s vs %s, turno de %s", save.nombre1, save.nombre2, turnoNombre), textX, textY, fontSize, colorTexto);
+    }
 
     //? Sonido del hover
     if (hovered && !(*wasHovered)) {
@@ -927,28 +1009,49 @@ void resetearTodo(int *estadoPartida, bool *tableroInicializado, char jugador1[M
 void cargarImagen(Texture2D *fotoJugador, bool *imagenCargada, char jugador[MAX_SIZE], StatsJugador jugadores[], int *cantidad, int x) {
     if (*imagenCargada) {
         return;
-    } else {
-        int idJugador = buscarJugadorPorNombre(jugadores, *cantidad, jugador);
-        if (x == 1) {
-            printf("X = %d\n", x);
-            if (jugadores[idJugador].partidasGanadas >= 2 && jugadores[idJugador].partidasGanadas < 4) {
-                *fotoJugador = LoadTexture("assets/images/USEC2.png");
-            } else if (jugadores[idJugador].partidasGanadas >= 4) {
-                *fotoJugador = LoadTexture("assets/images/USEC3.png");
-            } else {
-                *fotoJugador = LoadTexture("assets/images/USEC1.png");
-            }
-        } else if (x == 2) {
-            if (jugadores[idJugador].partidasGanadas >= 2 && jugadores[idJugador].partidasGanadas < 4) {
-                *fotoJugador = LoadTexture("assets/images/BEAR2.png");
-            } else if (jugadores[idJugador].partidasGanadas >= 4) {
-                *fotoJugador = LoadTexture("assets/images/BEAR3.png");
-            } else {
-                *fotoJugador = LoadTexture("assets/images/BEAR1.png");
-            }
-        }
-        *imagenCargada = true;
     }
+
+    // Skins específicas para IA por nombre fijo
+    typedef struct {
+        const char *nombre;
+        const char *ruta;
+    } SkinIA;
+    static const SkinIA skinsIA[] = {
+        {"Killa", "assets/images/Killa.png"},
+        {"Tagilla", "assets/images/Tagilla.png"},
+        {"Shturman", "assets/images/Shturman.png"},
+        {"Glukhar", "assets/images/Glukhar.png"},
+    };
+    for (size_t i = 0; i < sizeof(skinsIA) / sizeof(skinsIA[0]); i++) {
+        if (strcasecmp(jugador, skinsIA[i].nombre) == 0) {
+            *fotoJugador = LoadTexture(skinsIA[i].ruta);
+            *imagenCargada = true;
+            return;
+        }
+    }
+
+    int idJugador = buscarJugadorPorNombre(jugadores, *cantidad, jugador);
+    int partidasGanadas = (idJugador >= 0) ? jugadores[idJugador].partidasGanadas : 0;
+
+    if (x == 1) {
+        if (partidasGanadas >= 2 && partidasGanadas < 4) {
+            *fotoJugador = LoadTexture("assets/images/USEC2.png");
+        } else if (partidasGanadas >= 4) {
+            *fotoJugador = LoadTexture("assets/images/USEC3.png");
+        } else {
+            *fotoJugador = LoadTexture("assets/images/USEC1.png");
+        }
+    } else if (x == 2) {
+        if (partidasGanadas >= 2 && partidasGanadas < 4) {
+            *fotoJugador = LoadTexture("assets/images/BEAR2.png");
+        } else if (partidasGanadas >= 4) {
+            *fotoJugador = LoadTexture("assets/images/BEAR3.png");
+        } else {
+            *fotoJugador = LoadTexture("assets/images/BEAR1.png");
+        }
+    }
+
+    *imagenCargada = true;
 }
 
 void unloadImagen(Texture2D *fotoJugador1, Texture2D *fotoJugador2, bool *imagen1Cargada, bool *imagen2Cargada) {
@@ -956,4 +1059,49 @@ void unloadImagen(Texture2D *fotoJugador1, Texture2D *fotoJugador2, bool *imagen
     UnloadTexture(*fotoJugador2);
     *imagen1Cargada = false;
     *imagen2Cargada = false;
+}
+
+void leerInfoGuardado(const char *ruta, SaveSlotInfo *slot) {
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            slot->tablero[i][j] = '.';
+        }
+    }
+    FILE *fp = fopen(ruta, "r");
+    if (!fp) {
+        slot->existe = false;
+        slot->nombre1[0] = '\0';
+        slot->nombre2[0] = '\0';
+        slot->turno = 0;
+        slot->modoDeJuego = 0;
+        slot->estadoPartida = 0;
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                slot->tablero[i][j] = '.';
+            }
+        }
+        return;
+    }
+    char linea[MAX_SIZE];
+    if (!fgets(slot->nombre1, MAX_SIZE, fp) || !fgets(slot->nombre2, MAX_SIZE, fp)) {
+        fclose(fp);
+        slot->existe = false;
+        return;
+    }
+    slot->nombre1[strcspn(slot->nombre1, "\r\n")] = '\0';
+    slot->nombre2[strcspn(slot->nombre2, "\r\n")] = '\0';
+    if (!fgets(linea, sizeof(linea), fp)) { fclose(fp); slot->existe = false; return; }
+    slot->modoDeJuego = atoi(linea);
+    if (!fgets(linea, sizeof(linea), fp)) { fclose(fp); slot->existe = false; return; }
+    slot->turno = atoi(linea);
+    if (!fgets(linea, sizeof(linea), fp)) { fclose(fp); slot->existe = false; return; }
+    slot->estadoPartida = atoi(linea);
+    for (int i = 0; i < ROWS; i++) {
+        if (!fgets(linea, sizeof(linea), fp)) { fclose(fp); slot->existe = false; return; }
+        for (int j = 0; j < COLS && linea[j] != '\0' && linea[j] != '\n' && linea[j] != '\r'; j++) {
+            slot->tablero[i][j] = linea[j];
+        }
+    }
+    slot->existe = true;
+    fclose(fp);
 }

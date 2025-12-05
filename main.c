@@ -19,7 +19,9 @@ typedef enum {
     SCREEN_CONTINUAR_PARTIDA,
     SCREEN_PARTIDA_NUEVA,
     SCREEN_PARTIDAS_GUARDADAS, //? Separador
-    SCREEN_PARTIDA
+    SCREEN_PARTIDA,
+    SCREEN_PARTIDA_MENU,
+    SCREEN_GUARDAR_PARTIDA
 } GameScreen;
 
 bool hoverJugar = false;
@@ -32,6 +34,16 @@ bool hoverPartidasGuardadas = false;
 bool hoverEmpezarPartida = false;
 bool hoverVolverAlMenu = false;
 bool hoverMenu = false;
+bool hoverSave1 = false;
+bool hoverSave2 = false;
+bool hoverSave3 = false;
+bool hoverGuardar = false;
+bool hoverStatsMenu = false;
+bool hoverCreditosMenu = false;
+bool hoverSalirSinGuardar = false;
+bool save1Leido = false;
+bool save2Leido = false;
+bool save3Leido = false;
 bool tableroInicializado = false;
 bool estadisticasActualizadas = false;
 bool imagen1Cargada = false;
@@ -46,6 +58,7 @@ StatsJugador statsJugadores[MAX_JUGADORES];
 CaraACara caraACara[MAX_JUGADORES][MAX_JUGADORES];
 int cantidadJugadores = 0;
 const char *RUTA_STATS = "stats.txt";
+GameScreen previousScreen = SCREEN_MENU;
 
 int main(void){         
     int screenWidth = 800;
@@ -112,6 +125,10 @@ int main(void){
     bool editar2 = false;
     //cargarPartida(jugador1, jugador2, &modoDeJuego, &turno, &estadoPartida, tablero);
 
+    SaveSlotInfo save1;
+    SaveSlotInfo save2;
+    SaveSlotInfo save3;
+
     while (!WindowShouldClose()) {
         // Leer tamaño actual de la ventana
         int screenWidth = GetScreenWidth();
@@ -144,10 +161,12 @@ int main(void){
                 }
                 if (GuiRectButton((Rectangle){325, 250, 150, 40}, "Estadísticas", sonidoHover, &hoverEstadisticas)) {
                     PlaySound(sonidoClick);
+                    previousScreen = SCREEN_MENU;
                     currentScreen = SCREEN_ESTADISTICAS;
                 }
                 if (GuiRectButton((Rectangle){325, 300, 150, 40}, "Créditos", sonidoHover, &hoverCreditos)) {
                     PlaySound(sonidoClick);
+                    previousScreen = SCREEN_MENU;
                     currentScreen = SCREEN_CREDITOS;
                 }
                 if (GuiRectButton((Rectangle){325, 350, 150, 40}, "Salir", sonidoHover, &hoverSalir)) {
@@ -160,7 +179,7 @@ int main(void){
             case SCREEN_CREDITOS: //? Créditos
                 if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
                     PlaySound(sonidoClick);
-                    currentScreen = SCREEN_MENU;
+                    currentScreen = previousScreen;
                 }
                 DrawText("Autor: Amir Dujak\n\nProfesores:\n\nVicente Gonzáles\nCarlos Troya\nMartín Monzon\nElias Álvarez", 310, 100, 20, AMARILLOTARKOV);
                 break;
@@ -168,7 +187,7 @@ int main(void){
             case SCREEN_ESTADISTICAS: //? Estadísticas
                 if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
                     PlaySound(sonidoClick);
-                    currentScreen = SCREEN_MENU;
+                    currentScreen = previousScreen;
                 }
                 DrawText("Estadisticas", 330, 80, 20, AMARILLOTARKOV);
                 GuiToggleGroup((Rectangle){250, 120, 220, 32}, "Leaderboard;Head-to-Head", &vistaEstadisticas);
@@ -332,6 +351,100 @@ int main(void){
                     PlaySound(sonidoClick);
                     currentScreen = SCREEN_JUGAR;
                 }
+                leerInfoGuardado("save1.txt", &save1);
+                leerInfoGuardado("save2.txt", &save2);
+                leerInfoGuardado("save3.txt", &save3);
+                if (GuiRectButtonGuardado((Rectangle){260, 220, 280, 60}, save1, sonidoHover, &hoverSave1)) {
+                    if (save1.existe) {
+                        strcpy(jugador1, save1.nombre1);
+                        strcpy(jugador2, save1.nombre2);
+                        modoDeJuego = save1.modoDeJuego;
+                        turno = save1.turno;
+                        estadoPartida = save1.estadoPartida;
+                        memcpy(tablero, save1.tablero, sizeof(tablero));
+                        tableroInicializado = true;
+                        estadisticasActualizadas = false;
+                        columnaAColocar = -1;
+                        currentScreen = SCREEN_PARTIDA;
+                    }
+                }
+                if (GuiRectButtonGuardado((Rectangle){260, 290, 280, 60}, save2, sonidoHover, &hoverSave2)) {
+                    if (save2.existe) {
+                        strcpy(jugador1, save2.nombre1);
+                        strcpy(jugador2, save2.nombre2);
+                        modoDeJuego = save2.modoDeJuego;
+                        turno = save2.turno;
+                        estadoPartida = save2.estadoPartida;
+                        memcpy(tablero, save2.tablero, sizeof(tablero));
+                        tableroInicializado = true;
+                        estadisticasActualizadas = false;
+                        columnaAColocar = -1;
+                        currentScreen = SCREEN_PARTIDA;
+                    }
+                }
+                if (GuiRectButtonGuardado((Rectangle){260, 360, 280, 60}, save3, sonidoHover, &hoverSave3)) {
+                    if (save3.existe) {
+                        strcpy(jugador1, save3.nombre1);
+                        strcpy(jugador2, save3.nombre2);
+                        modoDeJuego = save3.modoDeJuego;
+                        turno = save3.turno;
+                        estadoPartida = save3.estadoPartida;
+                        memcpy(tablero, save3.tablero, sizeof(tablero));
+                        tableroInicializado = true;
+                        estadisticasActualizadas = false;
+                        columnaAColocar = -1;
+                        currentScreen = SCREEN_PARTIDA;
+                    }
+                }
+            break;
+
+            case SCREEN_PARTIDA_MENU: // menú dentro de partida
+                if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
+                    PlaySound(sonidoClick);
+                    currentScreen = SCREEN_PARTIDA;
+                }
+                if (GuiRectButton((Rectangle){300, 200, 200, 40}, "Guardar partida", sonidoHover, &hoverGuardar)) {
+                    PlaySound(sonidoClick);
+                    currentScreen = SCREEN_GUARDAR_PARTIDA;
+                }
+                if (GuiRectButton((Rectangle){300, 260, 200, 40}, "Ver estadísticas", sonidoHover, &hoverStatsMenu)) {
+                    PlaySound(sonidoClick);
+                    previousScreen = SCREEN_PARTIDA_MENU;
+                    currentScreen = SCREEN_ESTADISTICAS;
+                }
+                if (GuiRectButton((Rectangle){300, 320, 200, 40}, "Créditos", sonidoHover, &hoverCreditosMenu)) {
+                    PlaySound(sonidoClick);
+                    previousScreen = SCREEN_PARTIDA_MENU;
+                    currentScreen = SCREEN_CREDITOS;
+                }
+                if (GuiRectButton((Rectangle){300, 380, 200, 40}, "Salir sin guardar", sonidoHover, &hoverSalirSinGuardar)) {
+                    PlaySound(sonidoClick);
+                    resetearTodo(&estadoPartida, &tableroInicializado, jugador1, jugador2, &turno, &modoDeJuego, &columnaAColocar, &lleno1, &lleno2, &columnasLlenas, &editar, &editar2, &estadisticasActualizadas);
+                    unloadImagen(&fotoJugador1, &fotoJugador2, &imagen1Cargada, &imagen2Cargada);
+                    currentScreen = SCREEN_MENU;
+                }
+            break;
+
+            case SCREEN_GUARDAR_PARTIDA: // elegir slot para guardar
+                if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Volver", sonidoHover, &hoverVolver)) {
+                    PlaySound(sonidoClick);
+                    currentScreen = SCREEN_PARTIDA_MENU;
+                }
+                if (GuiRectButton((Rectangle){300, 200, 200, 40}, "Guardar en slot 1", sonidoHover, &hoverSave1)) {
+                    PlaySound(sonidoClick);
+                    guardarPartidaEnSlot("save1.txt", jugador1, jugador2, modoDeJuego, turno, estadoPartida, tablero);
+                    currentScreen = SCREEN_MENU;
+                }
+                if (GuiRectButton((Rectangle){300, 260, 200, 40}, "Guardar en slot 2", sonidoHover, &hoverSave2)) {
+                    PlaySound(sonidoClick);
+                    guardarPartidaEnSlot("save2.txt", jugador1, jugador2, modoDeJuego, turno, estadoPartida, tablero);
+                    currentScreen = SCREEN_MENU;
+                }
+                if (GuiRectButton((Rectangle){300, 320, 200, 40}, "Guardar en slot 3", sonidoHover, &hoverSave3)) {
+                    PlaySound(sonidoClick);
+                    guardarPartidaEnSlot("save3.txt", jugador1, jugador2, modoDeJuego, turno, estadoPartida, tablero);
+                    currentScreen = SCREEN_MENU;
+                }
             break;
 
 
@@ -355,6 +468,17 @@ int main(void){
             GuiToggleGroup((Rectangle){327, 312, 72, 38}, "Jugador 1;Jugador 2", &turno); //? Jugador 1 seria 0, jugador 2 sería 1
             if(GuiRectButton((Rectangle){313, 373, 176, 48}, "Empezar partida", sonidoHover, &hoverEmpezarPartida)) {
                 PlaySound(sonidoClick);
+                if (modoDeJuego == 1 || modoDeJuego == 2) {
+                    asignarNombresIA(modoDeJuego, jugador1, jugador2);
+                }
+                if (imagen1Cargada) {
+                    UnloadTexture(fotoJugador1);
+                    imagen1Cargada = false;
+                }
+                if (imagen2Cargada) {
+                    UnloadTexture(fotoJugador2);
+                    imagen2Cargada = false;
+                }
                 estadoPartida = 0;
                 columnasLlenas = 0;
                 lleno1 = 0;
@@ -371,8 +495,10 @@ int main(void){
                 cargarImagen(&fotoJugador1, &imagen1Cargada, jugador1, statsJugadores, &cantidadJugadores, 1);
                 cargarImagen(&fotoJugador2, &imagen2Cargada, jugador2, statsJugadores, &cantidadJugadores, 2);
                 iniciarTablero(tablero, &tableroInicializado);
-                if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamXVolver}, "Menú", sonidoHover, &hoverMenu)) {
-                    DrawText("Walter", PosXVolver, PosYVolver, 50, AMARILLOTARKOV);
+                if (GuiRectButton((Rectangle){PosXVolver, PosYVolver, TamXVolver, TamYVolver}, "Menú", sonidoHover, &hoverMenu)) {
+                    PlaySound(sonidoClick);
+                    previousScreen = SCREEN_PARTIDA;
+                    currentScreen = SCREEN_PARTIDA_MENU;
                 }
 
                 drawTurno((Rectangle){220, 150, 360, 50}, jugador1, jugador2, &turno);
