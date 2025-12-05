@@ -957,35 +957,3 @@ void unloadImagen(Texture2D *fotoJugador1, Texture2D *fotoJugador2, bool *imagen
     *imagen1Cargada = false;
     *imagen2Cargada = false;
 }
-
-void cargarMusica(Music *musica, int y, bool *musicaCargada) {
-    if (*musicaCargada || IsMusicStreamPlaying(*musica)) { //? Si ya hay musica, no se ejecuta el resto
-        return;
-    }
-
-    if (y) {
-        *musica = LoadMusicStream("assets/music/matchSongs/Countdown.mp3");
-        PlayMusicStream(*musica);
-        *musicaCargada = true;
-        return;
-    } else {
-        int x = generarRandom();
-        
-        if (x == 1) {
-            *musica = LoadMusicStream("assets/music/PrepareForEscape.mp3");
-        } else if (x == 2) {
-            *musica = LoadMusicStream("assets/music/Desolated.mp3");
-        } else if (x == 3) {
-            *musica = LoadMusicStream("assets/music/DarkHorizon.mp3");
-        } else if (x == 4) {
-            *musica = LoadMusicStream("assets/music/TheBloodWeSpill.mp3");
-        }
-        *musicaCargada = true;
-        PlayMusicStream(*musica);
-    }
-}
-
-void unloadMusica(Music *musica, bool *musicaCargada) {
-    UnloadMusicStream(*musica);
-    *musicaCargada = false;
-}

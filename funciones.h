@@ -54,7 +54,5 @@ void drawTablero(int RadioCirculo, char tablero[ROWS][COLS], int *columnaAColoca
 void resetearTodo(int *estadoPartida, bool *tableroInicializado, char jugador1[MAX_SIZE], char jugador2[MAX_SIZE], int *turno, int *modoDeJuego, int *columnaAColocar, int *lleno1, int *lleno2, int *columnasLlenas, bool *editar, bool *editar2, bool *estadisticasActualizadas);
 void cargarImagen(Texture2D *fotoJugador, bool *imagenCargada, char jugador[MAX_SIZE], StatsJugador jugadores[], int *cantidad, int x);
 void unloadImagen(Texture2D *fotoJugador1, Texture2D *fotoJugador2, bool *imagen1Cargada, bool *imagen2Cargada);
-void cargarMusica(Music *musica, int y, bool *musicaCargada);
-void unloadMusica(Music *musica, bool *musicaCargada);
 
 #endif

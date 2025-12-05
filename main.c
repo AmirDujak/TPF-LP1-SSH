@@ -75,8 +75,9 @@ int main(void){
     SetTargetFPS(60);
 
     InitAudioDevice(); //? Inicia el dispositivo de audio
-    Music music;
+    Music music = LoadMusicStream("assets/music/PrepareForEscape.mp3");
     SetMasterVolume(1.0f);
+    SetMusicVolume(music, 1.0f);
 
     //? Iniciar los efectos de sonido
     Sound sonidoHover = LoadSound("assets/sounds/hoverSound.ogg");
@@ -130,7 +131,6 @@ int main(void){
         float offsetX = (screenWidth - newWidth) / 2.0f;
         float offsetY = (screenHeight - newHeight) / 2.0f;
 
-        cargarMusica(&music, 0, &musicaCargada);
         UpdateMusicStream(music);
         BeginDrawing();
         ClearBackground(BLACK);
@@ -362,8 +362,6 @@ int main(void){
                 columnaAColocar = -1;
                 tableroInicializado = false;
                 estadisticasActualizadas = false;
-                unloadMusica(&music, &musicaCargada);
-                cargarMusica(&music, 5, &musicaCargada);
                 currentScreen = SCREEN_PARTIDA;
             }
             break;
@@ -418,7 +416,6 @@ int main(void){
                     if (GuiRectButton((Rectangle){300, 200, 170, 70}, "Volver al menu", sonidoHover, &hoverVolverAlMenu)) {
                         resetearTodo(&estadoPartida, &tableroInicializado, jugador1, jugador2, &turno, &modoDeJuego, &columnaAColocar, &lleno1, &lleno2, &columnasLlenas, &editar, &editar2, &estadisticasActualizadas);
                         unloadImagen(&fotoJugador1, &fotoJugador2, &imagen1Cargada, &imagen2Cargada);
-                        unloadMusica(&music, &musicaCargada);
                         currentScreen = SCREEN_MENU;
                     }
                 }
